@@ -78,7 +78,7 @@ class CategoryApi
         } else {
             $data = $this->categoryService->saveCategory($method, $data);
             if ($data === null) {
-                return ApiHelper::error($response, ['message' => 'Invalid input data'], 400);
+                return ApiHelper::error($response, ['message' => 'Category not found or could not be updated'], 404);
             }
             if (!$data) {
                 return ApiHelper::error($response, ['message' => 'Category already exists'], 409);
