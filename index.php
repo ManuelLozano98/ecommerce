@@ -17,5 +17,6 @@ $app->add(new ServiceMiddleware($app->getResponseFactory()));
 $app->add(new TrailingSlash(true)); // Prevent issues if user forgets the trailing slash by adding it
 
 (require __DIR__ . '/routes/api.php')($app);
+(require __DIR__ . '/routes/web.php')($app);
 
 $app->run();
