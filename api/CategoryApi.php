@@ -8,6 +8,7 @@ use App\Models\Category;
 use App\Utils\ApiHelper;
 use Rakit\Validation\Validator;
 use Rakit\Validation\ErrorBag;
+use App\Utils\PaginationHelper;
 
 class CategoryApi
 {
@@ -25,6 +26,28 @@ class CategoryApi
 
     public function getCategories($request, $response, $args)
     {
+        $params = $request->getQueryParams();
+        if (isset($params["start"]) && isset($params["length"])) { // If start and length are present as query params pagination is applied 
+            $tableName = "categories";
+            $search = $params['search']['value'] ?? '';
+            $columns = ['id', 'name', 'description', 'active'];
+            $data = PaginationHelper::make($params, $tableName, $columns);
+
+
+            $filteredRecords = PaginationHelper::getFilteredCount($search, $tableName, $columns);
+            $totalRecords = PaginationHelper::getTotalRecords($tableName);
+
+            $payload = [ // DataTables expects a response object with the following structure
+                'draw' => (int)($params['draw'] ?? 1),
+                'recordsTotal' => $totalRecords,
+                'recordsFiltered' => $filteredRecords,
+                'data' => $data
+            ];
+
+            $response->getBody()->write(json_encode($payload));
+            return $response->withStatus(200)->withHeader('Content-Type', 'application/json');
+        }
+
         $categories = $this->categoryService->getCategories();
         if (!$categories) {
             return ApiHelper::error($response, ['message' => 'No categories found'], 404);
