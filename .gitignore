@@ -19,4 +19,4 @@ Thumbs.db
 *.swp
 docker-compose.override.yml
 nbproject/
-
+public/adminlte/*
