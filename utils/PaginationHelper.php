@@ -66,7 +66,8 @@ class PaginationHelper
         $start = (int)($params['start'] ?? 0);
         $length = (int)($params['length'] ?? 10); // 10 items per page as default
         $search = $params['search']['value'] ?? '';
-        $orderColumnIndex = $params['order'][0]['column'] ?? 0; // Sort by the first element as default in the table in most cases it should be ID
+        $orderColumnIndex = $params['order'][0]['column'] ?? 0; // The index of the column the user wants to sort by
+
 
         if (!isset($params['order'])) {
             $params['order'][0]['dir'] = 'desc';
@@ -74,7 +75,7 @@ class PaginationHelper
 
         $orderDir = $params['order'][0]['dir'] === $defaultOrderDir ? 'asc' : 'desc'; // Show most recent items first by default otherwise show oldest items
 
-        $orderBy = in_array(strtolower($orderDir), $validColumns) ? $validColumns[$orderColumnIndex] : $validColumns[0];
+        $orderBy = $validColumns[$orderColumnIndex] ? $validColumns[$orderColumnIndex] : $validColumns[0]; // Sort by the selected column in the table or column 0 which in most cases is ID
         $orderDir = in_array(strtolower($orderDir), $validDirections) ? strtoupper($orderDir) : 'ASC';
 
         return self::getPagination($start, $length, $search, $orderBy, $orderDir, $tableName, $validColumns);
@@ -82,7 +83,7 @@ class PaginationHelper
 
     private static function buildQuery($search, $columns)
     {
-        $terms = array_filter(explode(' ', strtolower(trim($search))));
+        $terms = explode(' ', strtolower(trim($search)));
         $whereParts = [];
         $params = [];
         $types = '';
@@ -91,6 +92,14 @@ class PaginationHelper
         foreach ($terms as $term) {
             $termConditions = [];
             foreach ($columns as $column) {
+                if ($column === "active") {
+                    if (str_contains("yes", $term) || str_contains("ye", $term) || str_contains("y", $term)) {
+                        $term = 1;
+                    }
+                    if (str_contains("no", $term) || str_contains("n", $term)) {
+                        $term = 0;
+                    }
+                }
                 $termConditions[] = "LOWER($column) LIKE ?";
                 $params[] = '%' . $term . '%';
                 $types .= 's';
