@@ -96,20 +96,20 @@ require_once __DIR__ . "/layout/header.php";
                                     <div class="col-sm-12">
                                         <div class="form-group">
                                             <label for="edit-name">Name</label>
-                                            <input type="hidden" name="edit-idcategory" id="edit-idcategory">
-                                            <input type="text" class="form-control" name="edit-name" id="edit-name"
+                                            <input type="hidden" name="id" id="edit-idcategory">
+                                            <input type="text" class="form-control" name="name" id="edit-name"
                                                 placeholder="Write a name for a category" value="" required>
                                         </div>
                                     </div>
                                     <div class="col-sm-12">
                                         <label for="edit-description" class="form-label fw-semibold">Description</label>
-                                        <textarea id="edit-description" class="form-control" rows="4" maxlength="255" placeholder="Write here..." value=""></textarea>
+                                        <textarea name="description" id="edit-description" class="form-control" rows="4" maxlength="255" placeholder="Write here..." value=""></textarea>
                                         <div class="text-end text-muted mt-1">
                                             <span id="edit-counter">0/255</span>
                                         </div>
                                     </div>
                                     <div class="custom-control custom-switch">
-                                        <input type="checkbox" class="custom-control-input" id="customSwitch1">
+                                        <input type="checkbox" name="active" class="custom-control-input" id="customSwitch1">
                                         <label class="custom-control-label" for="customSwitch1">Active</label>
                                     </div>
 
