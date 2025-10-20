@@ -67,7 +67,7 @@ require_once __DIR__ . "/layout/header.php";
                                 </div>
                                 <div class="modal-footer justify-content-between">
                                     <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-                                    <button id="save" type="button" class="btn btn-primary">Save
+                                    <button id="save" type="submit" class="btn btn-primary">Save
                                         changes</button>
                                 </div>
 
@@ -117,7 +117,7 @@ require_once __DIR__ . "/layout/header.php";
                                 </div>
                                 <div class="modal-footer justify-content-between">
                                     <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-                                    <button id="edit-save" type="button" class="btn btn-primary">Save changes</button>
+                                    <button id="edit-save" type="submit" class="btn btn-primary">Save changes</button>
                                 </div>
 
                             </form>
@@ -133,6 +133,25 @@ require_once __DIR__ . "/layout/header.php";
             <!-- Gif loader -->
             <div id="loader-container">
                 <div class="loader" style="display: none;">
+                </div>
+            </div>
+
+            <!-- Full description modal -->
+            <div class="modal fade" id="viewModalText">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-description">Full text</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span>&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body" id="modal-body" style="word-wrap: break-word;">
+                        </div>
+                        <div class="modal-footer justify-content-between">
+                            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -217,7 +236,7 @@ require_once __DIR__ . "/layout/header.php";
     <!-- AdminLTE App -->
     <script src="<?php echo ADMINLTE ?>/dist/js/adminlte.min.js"></script>
     <!-- Generic script for utilities -->
-    <script type="text/javascript" src="views/js/utils.js"></script>
+    <script type="text/javascript" src="views/js/helper/utils.js"></script>
     <!-- Page specific script -->
     <script type="text/javascript" src="views/js/category.js"></script>
 </body>
