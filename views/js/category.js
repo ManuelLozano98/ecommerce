@@ -196,3 +196,28 @@ function loadEditForm() {
     updateCounter($description, $counter, descriptionLimit);
   });
 }
+
+function showFullText() {
+  $("#tableCategories").on("click", ".view-full-text", function () {
+    $("#modal-body").empty();
+    const fullText = decodeURIComponent($(this).data("full"));
+    $("#modal-body").append(`<p>${fullText}</p>`);
+    $("#viewModalText").modal("show");
+  });
+}
+
+function setupCounter(inputId, counterId, limit = 255) {
+  getById(inputId).addEventListener("input", function () {
+    updateCounter(this, getById(counterId), limit);
+  });
+}
+
+function loadDeleteButton() {
+  document.addEventListener("click", function (e) {
+    let deleteBtn = e.target.closest('[id^="btn-delete_"]');
+    if (deleteBtn) {
+      let id = deleteBtn.id.split("_")[1];
+      deleteItem(id);
+    }
+  });
+}
