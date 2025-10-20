@@ -89,3 +89,88 @@ async function edit() {
     notifyErrorResponse(error);
   }
 }
+
+function getCategories() {
+  let loaderTimeout;
+  let loaderShownAt = null;
+  const MIN_VISIBLE_TIME = 400; // ms
+  const DEBOUNCE_DELAY = 200; // ms
+
+  $("#tableCategories").DataTable({
+    serverSide: true,
+    processing: false,
+    ajax: function (data, callback, settings) {
+      loaderTimeout = setTimeout(() => {
+        $(".loader").show();
+        loaderShownAt = Date.now();
+      }, DEBOUNCE_DELAY);
+
+      $.ajax({
+        url: "api/categories",
+        method: "GET",
+        data: data,
+        success: function (response) {
+          callback({
+            draw: response.draw,
+            recordsTotal: response.recordsTotal,
+            recordsFiltered: response.recordsFiltered,
+            data: response.data,
+          });
+        },
+        error: function (xhr, status, error) {
+          console.error("An error occurred while loading data:", error);
+          callback({
+            draw: data.draw,
+            recordsTotal: 0,
+            recordsFiltered: 0,
+            data: [],
+          });
+          toastr.error(error);
+        },
+        complete: function () {
+          clearTimeout(loaderTimeout);
+          if (!loaderShownAt) return;
+
+          const elapsed = Date.now() - loaderShownAt;
+          const remainingTime = MIN_VISIBLE_TIME - elapsed;
+
+          if (remainingTime > 0) {
+            setTimeout(() => {
+              $(".loader").hide();
+              loaderShownAt = null;
+            }, remainingTime);
+          } else {
+            $(".loader").hide();
+            loaderShownAt = null;
+          }
+        },
+      });
+    },
+    ...getSettingsDataTable(),
+    buttons: getButtonsDataTable(),
+    dom: getDomStyleDataTable(),
+    columns: [
+      { data: "id" },
+      {
+        data: "name",
+        render: function (data) {
+          return truncateText(data);
+        },
+      },
+      {
+        data: "description",
+        render: function (data) {
+          return truncateText(data);
+        },
+      },
+      {
+        data: "active",
+        render: function (data, type, row) {
+          return data === 1 ? "Yes" : "No";
+        },
+      },
+      getActionsColumnDataTable(),
+    ],
+  });
+}
+
