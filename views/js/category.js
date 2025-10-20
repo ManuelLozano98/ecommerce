@@ -174,3 +174,25 @@ function getCategories() {
   });
 }
 
+function loadEditForm() {
+  $("#tableCategories").on("click", ".edit-button", function () {
+    const table = $("#tableCategories").DataTable();
+    let row = $(this).closest("tr");
+
+    if (row.hasClass("child")) {
+      row = row.prev(); // for responsive rows
+    }
+
+    const data = table.row(row).data();
+    const descriptionLimit = 255;
+
+    $("#edit-name").val(data.name);
+    $("#edit-idcategory").val(data.id);
+    $("#edit-description").val(data.description);
+    $("#customSwitch1").prop("checked", data.active === 1);
+
+    const $description = $("#edit-description");
+    const $counter = $("#edit-counter");
+    updateCounter($description, $counter, descriptionLimit);
+  });
+}
