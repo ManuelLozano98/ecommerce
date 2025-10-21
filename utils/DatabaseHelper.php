@@ -64,7 +64,7 @@ class DatabaseHelper
     public static function getLastId()
     {
         $con = Database::getConnection();
-        return $con->insert_id !== 0;
+        return $con->insert_id;
     }
     public static function preparedQueryObject($sql, $types, $object, $propertyNames)
     {
