@@ -51,10 +51,7 @@ class CategoryService
         $products = $productService->getProductsByCategory($id);
         if ($products) {
             foreach ($products as $product) {
-                $deleted = $productService->deleteProduct($product->getId());
-                if (!$deleted) {
-                    throw new DeleteException("Failed to delete product with ID " . $product->getId());
-                }
+               $productService->deleteProduct($product->getId());
             }
         }
         if (!Category::delete($id)) {

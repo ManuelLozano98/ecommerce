@@ -131,11 +131,7 @@ class ProductService
 
     public function getProductsByCategory($categoryId)
     {
-        $products = Product::findByCategory($categoryId);
-        if (!$products) {
-            throw new NotFoundException("The product was not found or not exists");
-        }
-        return $products;
+       return Product::findByCategory($categoryId);
     }
 
     public function deleteProduct($productId)
