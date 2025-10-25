@@ -30,7 +30,7 @@ class ProductApi
         if (isset($params["start"]) && isset($params["length"])) { // If start and length are present as query params pagination is applied 
             $tableName = "products";
             $search = $params['search']['value'] ?? '';
-            $columns = ['id', 'name', 'description', 'active', 'code', 'image', 'stock', 'price', 'category_id', 'created_at'];
+            $columns = ['id', 'name', 'description', 'code', 'image', 'stock', 'price', 'category_id', 'created_at', 'active']; //The columns must be in the same order as front end product table
             $data = PaginationHelper::make($params, $tableName, $columns);
 
 
@@ -49,6 +49,60 @@ class ProductApi
         }
 
         $products = $this->productService->getProducts();
+        return ApiHelper::success($response, $products);
+    }
+
+    public function getProductsDetailed($request, $response, $args)
+    {
+        $params = $request->getQueryParams();
+        if (isset($params["start"]) && isset($params["length"])) { // If start and length are present as query params pagination is applied 
+            $selectFields = [
+                'p.id',
+                'p.name AS product_name',
+                'p.code',
+                'p.description',
+                'p.price',
+                'p.image',
+                'p.stock',
+                'p.active AS active',
+                'p.created_at',
+                'c.name AS category_name',
+                'c.id AS category_id'
+            ];
+
+            $columns = [
+                'p.id',
+                'p.name',
+                'p.description',
+                'p.code',
+                'p.image',
+                'p.stock',
+                'p.price',
+                'c.name',
+                'p.created_at',
+                'p.active'
+            ];
+
+            $fromClause = 'products p JOIN categories c ON p.category_id = c.id';
+            $search = $params['search']['value'] ?? '';
+
+            $data = PaginationHelper::makeCustom($params, $fromClause, $columns, $selectFields);
+            $totalRecords = PaginationHelper::getTotalRecordsCustom($fromClause);
+            $filteredRecords = PaginationHelper::getFilteredCustomCount($search, $fromClause, $columns);
+
+
+            $payload = [
+                'draw' => (int)($params['draw'] ?? 1),
+                'recordsTotal' => $totalRecords,
+                'recordsFiltered' => $filteredRecords,
+                'data' => $data
+            ];
+
+            $response->getBody()->write(json_encode($payload));
+            return $response->withStatus(200)->withHeader('Content-Type', 'application/json');
+        }
+
+        $products = $this->productService->getProductsDetailed();
         return ApiHelper::success($response, $products);
     }
 
@@ -107,6 +161,24 @@ class ProductApi
         return ApiHelper::success($response, ['message' => 'Product deleted successfully']);
     }
 
+    public function saveImage($request, $response, $args)
+    {
+        $body = $request->getUploadedFiles();
+        if (!$body) {
+            return ApiHelper::error($response, ['message' => 'Invalid JSON input'], 400);
+        }
+
+        $img = $body["image"];
+        $isValid = $this->validateImage($img);
+        if (!$isValid) {
+            return ApiHelper::error($response, ['message' => 'Invalid image'], 400);
+        }
+        $productId = $args['id'];
+        $data = $this->productService->saveImage($img, $productId);
+        $dataObj = ["image_url" => $data];
+        return ApiHelper::success($response, $dataObj);
+    }
+
 
     private function validateProduct($data)
     {
@@ -117,7 +189,6 @@ class ProductApi
 
             'description' => 'nullable|max:255',
             'price'       => 'nullable|numeric|min:0',
-            'image'       => 'nullable|max:200',
             'stock'       => 'nullable|integer|min:0',
             'active'      => 'nullable|boolean',
             'created_at'  => 'nullable|date:Y-m-d H:i:s|date:Y-m-d|date:Y-m-d H:i',
@@ -128,5 +199,14 @@ class ProductApi
             return $validator->errors();
         }
         return true;
+    }
+
+    private function validateImage($file)
+    {
+
+        $fileExt = strtolower(pathinfo($file->getClientFileName(), PATHINFO_EXTENSION));
+        $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+
+        return in_array($fileExt, $allowed);
     }
 }
