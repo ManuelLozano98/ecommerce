@@ -67,6 +67,17 @@ class Product implements JsonSerializable
         return $products;
     }
 
+    public static function getAllWithCategoryNames()
+    {
+        $sql = "SELECT p.*, c.name AS category_name FROM products p, categories c WHERE p.id = c.id";
+        $query = DatabaseHelper::query($sql);
+        $products = [];
+        foreach ($query as $row) {
+            $products[] = new Product($row);
+        }
+        return $products;
+    }
+
     public static function getIdAndName()
     {
         $sql = "SELECT id, name FROM products";
