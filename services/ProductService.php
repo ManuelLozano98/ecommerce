@@ -26,6 +26,11 @@ class ProductService
         return Product::getAll();
     }
 
+    public function getProductsDetailed()
+    {
+        return Product::getAllWithCategoryNames();
+    }
+
     public function getProduct($id)
     {
         $product = Product::findById($id);
@@ -111,6 +116,29 @@ class ProductService
             return $product;
         }
     }
+    public function saveImage($image, $productId)
+    {
+        $product = Product::findById($productId);
+        if (!$product) {
+            throw new NotFoundException("The product was not found or not exists");
+        }
+
+        $upload  = $this->uploadImage($image);
+        $product->setImage($upload);
+        Product::edit($product);
+        return $product->getImage();
+    }
+
+    private function uploadImage($image)
+    {
+        $extension = pathinfo($image->getClientFilename(), PATHINFO_EXTENSION);
+        $basename = bin2hex(random_bytes(8));
+        $filename = sprintf('%s.%0.8s', $basename, $extension);
+        $uploadPath = __DIR__ . '/../uploads/images/products/' . $filename;
+        $relativeUploadPath = "products/" . $filename;
+        $image->moveTo($uploadPath, $filename);
+        return $relativeUploadPath;
+    }
 
     private function set($productDb, $rawProduct)
     {
@@ -131,7 +159,7 @@ class ProductService
 
     public function getProductsByCategory($categoryId)
     {
-       return Product::findByCategory($categoryId);
+        return Product::findByCategory($categoryId);
     }
 
     public function deleteProduct($productId)
