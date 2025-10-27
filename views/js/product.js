@@ -9,6 +9,14 @@ $(document).ready(function () {
     }
   });
 
+  $("#form-edit").on("submit", function (e) {
+    e.preventDefault();
+    const form = getById("form-edit");
+    if (checkForm(form)) {
+      edit();
+    }
+  });
+
   loadCategories("categorySelect");
   showFullText();
   loadEditForm();
@@ -241,4 +249,49 @@ function loadEditForm() {
 function generateBarCode(element, code) {
   JsBarcode(element, code);
   $(element).attr("width", "200px");
+}
+
+async function edit() {
+  const form = new FormData(getById("form-edit"));
+  let active = form.get("active");
+  if (active === "on") {
+    form.set("active", "1");
+  } else {
+    form.set("active", "0");
+  }
+  form.delete("image");
+  const formObj = Object.fromEntries(form.entries());
+  const product = JSON.stringify(formObj);
+  const { data, error } = await apiRequest(`api/products/${formObj.id}`, {
+    method: "PUT",
+    body: product,
+  });
+  if (data) {
+    const imageFile = getById("form-edit").image.files[0];
+    if (imageFile) {
+      const imageForm = new FormData();
+      imageForm.append("image", imageFile);
+      const { dataImage, errorImage } = await fetch(
+        `api/products/${data.data.id}/image`,
+        {
+          method: "POST",
+          body: imageForm,
+        }
+      );
+      if (dataImage) {
+        notifySuccessResponse(API_MSGS.Updated);
+        getProducts();
+        return;
+      }
+      if (errorImage) {
+        notifyErrorResponse(errorImage);
+        return;
+      }
+    }
+    notifySuccessResponse(API_MSGS.Updated);
+    getProducts();
+  }
+  if (error) {
+    notifyErrorResponse(error);
+  }
 }
