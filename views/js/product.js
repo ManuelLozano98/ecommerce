@@ -11,6 +11,7 @@ $(document).ready(function () {
 
   loadCategories("categorySelect");
   showFullText();
+  loadEditForm();
 });
 
 function getProducts() {
@@ -203,4 +204,41 @@ function showFullText() {
     $("#modal-body").append(`<p>${fullText}</p>`);
     $("#viewModalText").modal("show");
   });
+}
+
+function loadEditForm() {
+  $("#tableProducts").on("click", ".edit-button", function () {
+    const table = $("#tableProducts").DataTable();
+    let row = $(this).closest("tr");
+
+    if (row.hasClass("child")) {
+      row = row.prev(); // for responsive rows
+    }
+
+    const data = table.row(row).data();
+    const descriptionLimit = 255;
+    $("#edit-name").val(data.product_name);
+    $("#productId").val(data.id);
+    $("#edit-description").val(data.description);
+    $("#edit-price").val(data.price.substring(0, data.price.length - 1)); // Remove the € symbol
+    $("#edit-stock").val(data.stock);
+    $("#edit-code").val(data.code);
+    generateBarCode("#edit-barcode", data.code);
+    loadCategories("edit-categorySelect", data.category_id);
+    if (data.image !== "") {
+      $("#edit-img").show();
+      $("#edit-img").attr("src", "uploads/images/" + data.image);
+    } else {
+      $("#edit-img").hide();
+    }
+    $("#customSwitch1").prop("checked", data.active === 1);
+    const $description = $("#edit-description");
+    const $counter = $("#edit-counter");
+    updateCounter($description, $counter, descriptionLimit);
+  });
+}
+
+function generateBarCode(element, code) {
+  JsBarcode(element, code);
+  $(element).attr("width", "200px");
 }
