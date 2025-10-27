@@ -20,6 +20,7 @@ $(document).ready(function () {
   loadCategories("categorySelect");
   showFullText();
   loadEditForm();
+  loadDeleteButton();
 });
 
 function getProducts() {
@@ -293,5 +294,31 @@ async function edit() {
   }
   if (error) {
     notifyErrorResponse(error);
+  }
+}
+
+function loadDeleteButton() {
+  document.addEventListener("click", function (e) {
+    let deleteBtn = e.target.closest('[id^="btn-delete_"]');
+    if (deleteBtn) {
+      let id = deleteBtn.id.split("_")[1];
+      deleteItem(id);
+    }
+  });
+}
+
+async function deleteItem(id) {
+  const response = await getDeleteMsg();
+  if (response.isConfirmed) {
+    const { data, error } = await apiRequest(`api/products/${id}`, {
+      method: "DELETE",
+    });
+    if (data) {
+      notifySuccessResponse(API_MSGS.Deleted);
+      getProducts();
+    }
+    if (error) {
+      notifyErrorResponse(error);
+    }
   }
 }
