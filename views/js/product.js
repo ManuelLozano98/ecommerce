@@ -1,5 +1,15 @@
 $(document).ready(function () {
   getProducts();
+
+  $("#form").on("submit", function (e) {
+    e.preventDefault();
+    const form = getById("form");
+    if (checkForm(form)) {
+      insert();
+    }
+  });
+
+  loadCategories("categorySelect");
 });
 
 function getProducts() {
@@ -114,4 +124,73 @@ function getProducts() {
       getActionsColumnDataTable(),
     ],
   });
+}
+
+async function loadCategories(selectId, id = "") {
+  $(`#${selectId}`).empty();
+  const { data, error } = await apiRequest(`api/categories/name`, {
+    method: "GET",
+  });
+  let select = getById(selectId);
+
+  setupSelect(select);
+  if (data) {
+    data.data.forEach((category) => {
+      let option = new Option(category.name, category.id);
+      if (id && id === category.id) {
+        option.selected = true;
+      }
+      select.append(option);
+    });
+
+    if (error) {
+      notifyErrorResponse(error);
+    }
+  }
+}
+
+function setupSelect(element) {
+  $(element).select2({
+    theme: "bootstrap4",
+  });
+}
+
+async function insert() {
+  const form = new FormData(getById("form"));
+  form.delete("image");
+  const formObj = Object.fromEntries(form.entries());
+  const product = JSON.stringify(formObj);
+  form.delete("image");
+  const { data, error } = await apiRequest("api/products", {
+    method: "POST",
+    body: product,
+  });
+  if (data) {
+    const imageFile = getById("form").image.files[0];
+    if (imageFile) {
+      const imageForm = new FormData();
+      imageForm.append("image", imageFile);
+      const { dataImage, errorImage } = await fetch(
+        `api/products/${data.data.id}/image`,
+        {
+          method: "POST",
+          body: imageForm,
+        }
+      );
+      if (dataImage) {
+        notifySuccessResponse(API_MSGS.Created);
+        getProducts();
+        return;
+      }
+      if (errorImage) {
+        notifyErrorResponse(errorImage);
+        return;
+      }
+    }
+    notifySuccessResponse(API_MSGS.Created);
+    getProducts();
+  }
+  if (error) {
+    notifyErrorResponse(error);
+  }
 }
