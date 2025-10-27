@@ -10,6 +10,7 @@ $(document).ready(function () {
   });
 
   loadCategories("categorySelect");
+  showFullText();
 });
 
 function getProducts() {
@@ -193,4 +194,13 @@ async function insert() {
   if (error) {
     notifyErrorResponse(error);
   }
+}
+
+function showFullText() {
+  $("#tableProducts").on("click", ".view-full-text", function () {
+    $("#modal-body").empty();
+    const fullText = decodeURIComponent($(this).data("full"));
+    $("#modal-body").append(`<p>${fullText}</p>`);
+    $("#viewModalText").modal("show");
+  });
 }
