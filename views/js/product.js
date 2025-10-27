@@ -1,0 +1,117 @@
+$(document).ready(function () {
+  getProducts();
+});
+
+function getProducts() {
+  let loaderTimeout;
+  let loaderShownAt = null;
+  const MIN_VISIBLE_TIME = 400; // ms
+  const DEBOUNCE_DELAY = 200; // ms
+
+  $("#tableProducts").DataTable({
+    serverSide: true,
+    processing: false,
+    ajax: function (data, callback, settings) {
+      loaderTimeout = setTimeout(() => {
+        $(".loader").show();
+        loaderShownAt = Date.now();
+      }, DEBOUNCE_DELAY);
+
+      $.ajax({
+        url: "api/products/detailed",
+        method: "GET",
+        data: data,
+        success: function (response) {
+          callback({
+            draw: response.draw,
+            recordsTotal: response.recordsTotal,
+            recordsFiltered: response.recordsFiltered,
+            data: response.data,
+          });
+        },
+        error: function (xhr, status, error) {
+          console.error("An error occurred while loading data:", error);
+          callback({
+            draw: data.draw,
+            recordsTotal: 0,
+            recordsFiltered: 0,
+            data: [],
+          });
+          toastr.error(error);
+        },
+        complete: function () {
+          clearTimeout(loaderTimeout);
+          if (!loaderShownAt) return;
+
+          const elapsed = Date.now() - loaderShownAt;
+          const remainingTime = MIN_VISIBLE_TIME - elapsed;
+
+          if (remainingTime > 0) {
+            setTimeout(() => {
+              $(".loader").hide();
+              loaderShownAt = null;
+            }, remainingTime);
+          } else {
+            $(".loader").hide();
+            loaderShownAt = null;
+          }
+        },
+      });
+    },
+    ...getSettingsDataTable(),
+    buttons: getButtonsDataTable(),
+    dom: getDomStyleDataTable(),
+    columns: [
+      { data: "id" },
+      {
+        data: "product_name",
+        render: function (data) {
+          return truncateText(data);
+        },
+      },
+      {
+        data: "description",
+        render: function (data) {
+          return truncateText(data);
+        },
+      },
+      {
+        data: "code",
+        render: function (data) {
+          return truncateText(data);
+        },
+      },
+      {
+        data: "image",
+        render: function (data) {
+          let result = "No image found";
+          if (data !== "") {
+            result = `<img alt="${data.substring(
+              0,
+              data.indexOf(".")
+            )}" src="uploads/images/${data}" width="100px" height="100px" object-fit:cover;/>`;
+          }
+          return result;
+        },
+      },
+      { data: "stock" },
+      {
+        data: "price",
+      },
+      {
+        data: "category_name",
+        render: function (data) {
+          return truncateText(data);
+        },
+      },
+      { data: "created_at" },
+      {
+        data: "active",
+        render: function (data, type, row) {
+          return data === 1 ? "Yes" : "No";
+        },
+      },
+      getActionsColumnDataTable(),
+    ],
+  });
+}
