@@ -21,6 +21,12 @@ $(document).ready(function () {
   showFullText();
   loadEditForm();
   loadDeleteButton();
+  setupCounter("description", "counter");
+  setupCounter("edit-description", "edit-counter");
+  setupGenerateCode("generate-code", "barcode", "code");
+  setupGenerateCode("edit-generate-code", "edit-barcode", "edit-code");
+  validateUserProductCode("code", "barcode");
+  validateUserProductCode("edit-code", "edit-barcode");
 });
 
 function getProducts() {
@@ -321,4 +327,53 @@ async function deleteItem(id) {
       notifyErrorResponse(error);
     }
   }
+}
+
+function setupGenerateCode(buttonId, barcodeId, codeId) {
+  document.getElementById(buttonId).addEventListener("click", function (event) {
+    event.preventDefault();
+    generateCode(barcodeId, codeId);
+  });
+}
+
+function setupCounter(inputId, counterId, limit = 255) {
+  getById(inputId).addEventListener("input", function () {
+    updateCounter(this, getById(counterId), limit);
+  });
+}
+
+function generateCode(element, elementId) {
+  let code = getById(elementId);
+  code.value = Date.now() + Math.floor(Math.random());
+  validateCode(element, code.value, elementId);
+}
+
+async function validateCode(element, code, inputId) {
+  const { data, error } = await apiRequest(`api/products/code/${code}`, {
+    method: "GET",
+  });
+  if (data) {
+    $("#" + inputId).addClass("is-invalid");
+    $("#" + inputId).removeClass("is-valid");
+  }
+  if (error) {
+    $("#" + inputId).removeClass("is-invalid");
+    $("#" + inputId).addClass("is-valid");
+    generateBarCode("#" + element, code);
+  }
+}
+function debounce(func, delay) {
+  let timeout;
+  return function () {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func.apply(this, arguments), delay);
+  };
+}
+function validateUserProductCode(codeId, barcodeId) {
+  document.getElementById(codeId).addEventListener(
+    "input",
+    debounce(function () {
+      validateCode(barcodeId, this.value, codeId);
+    }, 500)
+  );
 }
