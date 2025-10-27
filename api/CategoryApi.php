@@ -19,7 +19,7 @@ class CategoryApi
     public function __construct()
     {
         $this->categoryService = new CategoryService();
-        $this->productService = new ProductService();
+        $this->productService = new ProductService($this->categoryService);
         $this->validator = new Validator();
     }
 
@@ -59,9 +59,6 @@ class CategoryApi
     public function getCategoryById($request, $response, $args)
     {
         $category = $this->categoryService->getCategory($args['id']);
-        if (!$category) {
-            return ApiHelper::error($response, ['message' => 'Category not found'], 404);
-        }
         return ApiHelper::success($response, $category);
     }
 
@@ -69,9 +66,6 @@ class CategoryApi
     public function getCategoriesName($request, $response, $args)
     {
         $categories = $this->categoryService->getCategoriesName();
-        if (!$categories) {
-            return ApiHelper::error($response, ['message' => 'No categories found'], 404);
-        }
         $category = array_map(fn(Category $c) => [
             'id' => (int) $c->getId(),
             'name' => $c->getName()
@@ -100,24 +94,15 @@ class CategoryApi
             return ApiHelper::error($response, ['message' => 'Invalid input data', 'details' => $errors], 400);
         } else {
             $data = $this->categoryService->saveCategory($method, $data);
-            if ($data === null) {
-                return ApiHelper::error($response, ['message' => 'Category not found or could not be updated'], 404);
-            }
-            if (!$data) {
-                return ApiHelper::error($response, ['message' => 'Category already exists'], 409);
-            }
+            return ApiHelper::success($response, $data);
         }
-        return ApiHelper::success($response, $data);
     }
 
 
 
     public function deleteCategory($request, $response, $args)
     {
-        $data = $this->categoryService->deleteCategory($args['id'], $this->productService);
-        if (!$data) {
-            return ApiHelper::error($response, ['message' => 'Category not found or could not be deleted'], 404);
-        }
+        $this->categoryService->deleteCategory($args['id'], $this->productService);
         return ApiHelper::success($response, ['message' => 'Category deleted successfully']);
     }
 

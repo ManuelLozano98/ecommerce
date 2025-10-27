@@ -14,6 +14,17 @@ class PaginationHelper
         return (int) $data[0]["records"];
     }
 
+    public static function getTotalRecordsCustom(string $fromClause, string $whereClause = '', string $types = '', array $params = [])
+    {
+        $query = "SELECT COUNT(*) AS records FROM $fromClause $whereClause";
+        if (empty($params)) {
+            $data = DatabaseHelper::query($query);
+        } else {
+            $data = DatabaseHelper::getDataPreparedQuery($query, $types, ...$params);
+        }
+        return (int) $data[0]["records"];
+    }
+
 
     public static function getPagination(int $start, int $length, string $search = '', string $orderBy = 'id', string $orderDir = 'DESC', string $tableName, array $columns)
     {
@@ -35,6 +46,23 @@ class PaginationHelper
         return DatabaseHelper::getDataPreparedQuery($query, $types, ...$params);
     }
 
+    public static function getPaginationCustom(int $start, int $length, string $search, string $orderBy, string $orderDir, string $fromClause, array $columns, array $selectFields)
+    {
+        $data = self::buildQuery($search, $columns);
+        $whereClause = $data["where"];
+        $types = $data["types"];
+        $params = $data["params"];
+
+        $select = implode(', ', $selectFields);
+
+        $query = "SELECT $select FROM $fromClause $whereClause ORDER BY $orderBy $orderDir LIMIT ?, ?";
+        $params[] = $start;
+        $params[] = $length;
+        $types .= 'ii';
+
+        return DatabaseHelper::getDataPreparedQuery($query, $types, ...$params);
+    }
+
 
 
     public static function getFilteredCount(string $search, string $tableName, array $columns)
@@ -47,6 +75,26 @@ class PaginationHelper
         $params = $data["params"];
 
         $query = "SELECT COUNT(*) AS records FROM $tableName $whereClause";
+
+        if (count($params) < 1) {
+            $result = DatabaseHelper::query($query);
+            return isset($result[0]['records']) ? (int) $result[0]['records'] : 0;
+        }
+
+        $result = DatabaseHelper::getDataPreparedQuery($query, $types, ...$params);
+        return isset($result[0]['records']) ? (int) $result[0]['records'] : 0;
+    }
+
+    public static function getFilteredCustomCount(string $search, string $from, array $columns)
+    {
+
+        $data = self::buildQuery($search, $columns);
+
+        $whereClause = $data["where"];
+        $types = $data["types"];
+        $params = $data["params"];
+
+        $query = "SELECT COUNT(*) AS records FROM $from $whereClause";
 
         if (count($params) < 1) {
             $result = DatabaseHelper::query($query);
@@ -80,6 +128,21 @@ class PaginationHelper
 
         return self::getPagination($start, $length, $search, $orderBy, $orderDir, $tableName, $validColumns);
     }
+    public static function makeCustom(array $params, string $fromClause, array $validColumns, array $selectFields)
+    {
+        $validDirections = ['asc', 'desc'];
+
+        $start = (int)($params['start'] ?? 0);
+        $length = (int)($params['length'] ?? 10);
+        $search = $params['search']['value'] ?? '';
+        $orderColumnIndex = $params['order'][0]['column'] ?? 0;
+        $orderDir = strtolower($params['order'][0]['dir'] ?? 'asc');
+
+        $orderBy = $validColumns[$orderColumnIndex] ?? $validColumns[0];
+        $orderDir = in_array($orderDir, $validDirections) ? strtoupper($orderDir) : 'ASC';
+
+        return self::getPaginationCustom($start, $length, $search, $orderBy, $orderDir, $fromClause, $validColumns, $selectFields);
+    }
 
     private static function buildQuery($search, $columns)
     {
@@ -92,7 +155,7 @@ class PaginationHelper
         foreach ($terms as $term) {
             $termConditions = [];
             foreach ($columns as $column) {
-                if ($column === "active") {
+                if (str_contains($column, "active")) {
                     if (str_contains("yes", $term) || str_contains("ye", $term) || str_contains("y", $term)) {
                         $term = 1;
                     }

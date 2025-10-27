@@ -10,6 +10,9 @@ use Psr\Http\Server\MiddlewareInterface;
 use App\Exceptions\DeleteException;
 use App\Exceptions\InsertException;
 use App\Exceptions\UpdateException;
+use App\Exceptions\DuplicateException;
+use App\Exceptions\ForeignKeyException;
+use App\Exceptions\NotFoundException;
 use Exception;
 
 class ServiceMiddleware implements MiddlewareInterface
@@ -25,8 +28,12 @@ class ServiceMiddleware implements MiddlewareInterface
     {
         try {
             return $handler->handle($request);
+        } catch (DuplicateException | ForeignKeyException $e) {
+            return $this->errorResponse(409, $e->getMessage());
         } catch (InsertException | UpdateException | DeleteException $e) {
             return $this->errorResponse(400, $e->getMessage());
+        } catch (NotFoundException $e) {
+            return $this->errorResponse(404, $e->getMessage());
         } catch (Exception $e) {
             return $this->errorResponse(500, 'Database Error: ' . $e->getMessage());
         }
