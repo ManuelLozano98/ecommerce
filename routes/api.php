@@ -3,11 +3,13 @@
 use Slim\App;
 use App\Api\CategoryApi;
 use App\Api\ProductApi;
+use App\Api\RoleApi;
 use App\Api\UserApi;
 
 return function (App $app) {
     $categoryApi = new CategoryApi();
     $productApi = new ProductApi();
+    $roleApi = new RoleApi();
     $userApi = new UserApi();
     $app->get('/api/categories/name/', [$categoryApi, 'getCategoriesName']);
     $app->get('/api/categories/', [$categoryApi, 'getCategories']);
@@ -36,4 +38,10 @@ return function (App $app) {
     $app->put('/api/users/{id:[0-9]+}/', [$userApi, 'saveUser']);
     $app->delete('/api/users/{id:[0-9]+}/', [$userApi, 'deleteUser']);
 
+    $app->get('/api/roles/name/', [$roleApi, 'getRolesName']);
+    $app->get('/api/roles/', [$roleApi, 'getRoles']);
+    $app->get('/api/roles/{id:[0-9]+}/', [$roleApi, 'getRoleById']);
+    $app->post('/api/roles/', [$roleApi, 'saveRole']);
+    $app->put('/api/roles/{id:[0-9]+}/', [$roleApi, 'saveRole']);
+    $app->delete('/api/roles/{id:[0-9]+}/', [$roleApi, 'deleteRole']);
 };
