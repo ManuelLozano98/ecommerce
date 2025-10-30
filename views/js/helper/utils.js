@@ -181,6 +181,9 @@ async function apiRequest(url, options = {}) {
 }
 
 function truncateText(data) {
+  if(!data || data === ""){
+    return data;
+  }
   const truncated = data.length > 30 ? data.substring(0, 30) + "..." : data;
   if (truncated.substring(0, truncated.indexOf("..."))) {
     return `<span>${truncated}</span>
