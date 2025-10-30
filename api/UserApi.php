@@ -145,7 +145,7 @@ class UserApi
             $method = "POST";
         }
 
-        $isValid = $this->validateUser($data);
+        $isValid = $this->validateUser($data, $method);
         if (is_object($isValid) && $isValid instanceof ErrorBag) {
             $errors = $isValid->toArray();
             return ApiHelper::error($response, ['message' => 'Invalid input data', 'details' => $errors], 400);
@@ -180,19 +180,33 @@ class UserApi
     }
 
 
-    private function validateUser($data)
+    private function validateUser($data, $method)
     {
-        $validator = $this->validator->make($data, [
-            'name'             => 'required|max:100',
-            'active'           => 'nullable|boolean',
-            'email'            => 'email|max:100',
-            'password'         => 'nullable|regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/',
-            'username'         => 'required|regex:/^[a-zA-Z0-9](?!.*[_.]{2})[a-zA-Z0-9._]{2,18}[a-zA-Z0-9]$/',
-            'document_type_id' => 'nullable|numeric',
-            'phone'            => 'nullable|regex:/^[6-9]\d{8}$/',
-            'address'          => 'nullable|max:255',
-            'document'         => 'nullable|max:255',
-        ]);
+        if ($method === "POST") {
+            $validator = $this->validator->make($data, [
+                'name'             => 'required|max:100',
+                'active'           => 'nullable|boolean',
+                'email'            => 'required|email|max:100',
+                'password'         => 'required|regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/',
+                'username'         => 'required|regex:/^[a-zA-Z0-9](?!.*[_.]{2})[a-zA-Z0-9._]{2,18}[a-zA-Z0-9]$/',
+                'document_type_id' => 'nullable|numeric',
+                'phone'            => 'nullable|regex:/^[6-9]\d{8}$/',
+                'address'          => 'nullable|max:255',
+                'document'         => 'nullable|max:255',
+            ]);
+        } else {
+            $validator = $this->validator->make($data, [
+                'name'             => 'required|max:100',
+                'active'           => 'nullable|boolean',
+                'email'            => 'email|max:100',
+                'password'         => 'nullable|regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/',
+                'username'         => 'required|regex:/^[a-zA-Z0-9](?!.*[_.]{2})[a-zA-Z0-9._]{2,18}[a-zA-Z0-9]$/',
+                'document_type_id' => 'nullable|numeric',
+                'phone'            => 'nullable|regex:/^[6-9]\d{8}$/',
+                'address'          => 'nullable|max:255',
+                'document'         => 'nullable|max:255',
+            ]);
+        }
 
         $validator->validate();
         if ($validator->fails()) {
