@@ -16,6 +16,7 @@ $(document).ready(function () {
     }
   });
   loadDeleteButton();
+  showFullText();
 });
 
 function getUsers() {
@@ -320,5 +321,14 @@ function loadDeleteButton() {
       let id = deleteBtn.id.split("_")[1];
       deleteItem(id);
     }
+  });
+}
+
+function showFullText() {
+  $("#tableUsers").on("click", ".view-full-text", function () {
+    $("#modal-body").empty();
+    const fullText = decodeURIComponent($(this).data("full"));
+    $("#modal-body").append(`<p>${fullText}</p>`);
+    $("#viewModalText").modal("show");
   });
 }
