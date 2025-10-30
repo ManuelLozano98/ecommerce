@@ -4,20 +4,25 @@ $(document).ready(function () {
   $("#form-edit").on("submit", function (e) {
     e.preventDefault();
     const form = getById("form-edit");
-    if (checkForm(form)) {
+    if (isFormValid(form)) {
       edit();
+    } else {
+      redirectTab("#form-edit");
     }
   });
   $("#form").on("submit", function (e) {
     e.preventDefault();
-    const form = getById("form-edit");
-    if (checkForm(form)) {
+    const form = getById("form");
+    if (isFormValid(form)) {
       insert();
+    } else {
+      redirectTab("#form");
     }
   });
   loadDeleteButton();
   showFullText();
   setupPasswordButtons();
+  verify();
 });
 
 function getUsers() {
@@ -367,4 +372,238 @@ function toggleInput(elementId) {
   } else {
     $("#" + elementId).attr("type", "password");
   }
+}
+
+function redirectTab(formSelector) {
+  let tabError = $(formSelector)
+    .find(".is-invalid")
+    .first()
+    .closest(".tab-pane");
+  let userTab = $(formSelector + " .tab-pane.fade.active.show");
+  if (!tabError.is(userTab)) {
+    let tabId = tabError.attr("id");
+    let formTabs =
+      formSelector.substr(-4) === "edit" ? "#edit-formTabs" : "#formTabs";
+    let linkUserTab = $(formTabs).find(".nav-link.active");
+    linkUserTab.removeClass("active");
+    linkUserTab.removeAttr("aria-selected");
+    let linkErrorTab = $("#" + tabId + "-tab");
+    linkErrorTab.addClass("active");
+    linkUserTab.attr("aria-selected", "true");
+    userTab.removeClass("active show");
+    tabError.addClass("active show");
+  }
+}
+
+function verify() {
+  $.validator.addMethod("usernameValidator", function (value, element) {
+    return /^[a-zA-Z0-9](?!.*[_.]{2})[a-zA-Z0-9._]{2,18}[a-zA-Z0-9]$/.test(
+      value
+    );
+  });
+
+  $.validator.addMethod("nameValidator", function (value, element) {
+    return /^[a-zA-Z]{3,}$/.test(value);
+  });
+
+  $.validator.addMethod("emailValidator", function (value, element) {
+    return /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(value);
+  });
+
+  $.validator.addMethod("passwordValidator", function (value, element) {
+    return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/.test(value);
+  });
+
+  $.validator.addMethod(
+    "checkPasswordsValidator",
+    function (value, element, param) {
+      let passwordValue = $(param).val();
+      return value === passwordValue;
+    }
+  );
+  $.validator.addMethod("phoneValidator", function (value, element) {
+    return this.optional(element) || /^[6-9]\d{8}$/.test(value);
+  });
+  $.validator.addMethod("dniValidator", function (value, element) {
+    let array = [
+      "T",
+      "R",
+      "W",
+      "A",
+      "G",
+      "M",
+      "Y",
+      "F",
+      "P",
+      "D",
+      "X",
+      "B",
+      "N",
+      "J",
+      "Z",
+      "S",
+      "Q",
+      "V",
+      "H",
+      "L",
+      "C",
+      "K",
+      "E",
+    ];
+    return (
+      this.optional(element) ||
+      (/^\d{8}[A-HJ-NP-TV-Z]$/i.test(value) &&
+        value.toUpperCase() ==
+          value.substring(0, value.length - 1) +
+            array[value.substring(0, value.length - 1) % 23])
+    );
+  });
+
+  $.validator.addMethod("editEmailValidator", function (value, element) {
+    return (
+      this.optional(element) ||
+      /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(value)
+    );
+  });
+
+  $.validator.addMethod(
+    "editPasswordValidator",
+    function (value, element, params) {
+      let param = $(params).val();
+      let flag = 0;
+      if (value === "" && param === "") flag = 1;
+      if (value !== "" && param !== "") flag = 2;
+      if (flag === 1) return true;
+      if (flag === 2)
+        return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/.test(value);
+      return false;
+    }
+  );
+
+  let commonRules = {
+    name: {
+      required: true,
+      minlength: 3,
+      nameValidator: true,
+    },
+    phone: {
+      phoneValidator: true,
+    },
+    document: {
+      dniValidator: true,
+    },
+  };
+
+  let commonMessages = {
+    name: {
+      required: "Please enter a name",
+      minlength: "Please enter a valid name, 3 characters at least",
+      nameValidator: "Please enter a valid name",
+    },
+    phone: {
+      phoneValidator: "Please enter a valid phone",
+    },
+    document: {
+      dniValidator: "Please enter a valid DNI",
+    },
+  };
+
+  let validationConfig = {
+    ignore: [],
+    errorElement: "span",
+    errorPlacement: (error, element) => {
+      error.addClass("invalid-feedback");
+      element.closest(".form-group").append(error);
+    },
+    highlight: (element) => {
+      $(element).addClass("is-invalid");
+    },
+    unhighlight: (element) => {
+      $(element).removeClass("is-invalid");
+    },
+  };
+
+  $("#form").validate({
+    ...validationConfig,
+    rules: {
+      ...commonRules,
+      username: {
+        required: true,
+        minlength: 4,
+        usernameValidator: true,
+      },
+      email: {
+        required: true,
+        emailValidator: true,
+      },
+      password: {
+        required: true,
+        passwordValidator: true,
+      },
+      repassword: {
+        required: true,
+        passwordValidator: true,
+        checkPasswordsValidator: "#password",
+      },
+    },
+    messages: {
+      ...commonMessages,
+      email: {
+        required: "Please enter a email address",
+        emailValidator: "Please enter a valid email address",
+      },
+      username: {
+        required: "Please enter a username",
+        usernameValidator:
+          "The username must be between 4 and 20 characters, with no special characters or spaces, and not begin or end with . or _",
+      },
+      password: {
+        required: "Please provide a password",
+        passwordValidator:
+          "Your password must be at least 8 characters long, 1 uppercase, 1 lowercase, 1 number and 1 symbol",
+      },
+      repassword: {
+        required: "Please provide a password",
+        passwordValidator:
+          "Your password must be at least 8 characters long, 1 uppercase, 1 lowercase, 1 number and 1 symbol",
+        checkPasswordsValidator: "The password doesn't match",
+      },
+    },
+  });
+
+  $("#form-edit").validate({
+    ...validationConfig,
+    rules: {
+      ...commonRules,
+
+      email: {
+        editEmailValidator: true,
+      },
+      password: {
+        editPasswordValidator: "#edit-repassword",
+      },
+      repassword: {
+        editPasswordValidator: "#edit-password",
+        checkPasswordsValidator: "#edit-password",
+      },
+    },
+    messages: {
+      ...commonMessages,
+      email: {
+        editEmailValidator: "Please enter a valid email address",
+      },
+      password: {
+        editPasswordValidator:
+          "Your password must be at least 8 characters long, 1 uppercase, 1 lowercase, 1 number and 1 symbol",
+      },
+      repassword: {
+        editPasswordValidator: "",
+        checkPasswordsValidator: "The password doesn't match",
+      },
+    },
+  });
+}
+
+function isFormValid(formSelector) {
+  return $(formSelector).valid();
 }
