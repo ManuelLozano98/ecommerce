@@ -6,6 +6,7 @@ use Slim\App;
 use Slim\Views\PhpRenderer;
 use App\Controllers\CategoryController;
 use App\Controllers\ProductController;
+use App\Controllers\RoleController;
 use App\Controllers\UserController;
 
 return function (App $app) {
@@ -14,6 +15,7 @@ return function (App $app) {
     $categoryController = new CategoryController($renderer);
     $productController = new ProductController($renderer);
     $userController = new UserController($renderer);
+    $roleController = new RoleController($renderer);
 
     $app->get('/', function ($request, $response) {
         $response->getBody()->write('Welcome to the E-commerce');
@@ -32,5 +34,8 @@ return function (App $app) {
     });
     $app->get('/users/', function ($request, $response, $args) use ($userController) {
         return $userController->index($request, $response, $args);
+    });
+    $app->get('/roles/', function ($request, $response, $args) use ($roleController) {
+        return $roleController->index($request, $response, $args);
     });
 };
