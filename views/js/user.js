@@ -17,6 +17,7 @@ $(document).ready(function () {
   });
   loadDeleteButton();
   showFullText();
+  setupPasswordButtons();
 });
 
 function getUsers() {
@@ -331,4 +332,39 @@ function showFullText() {
     $("#modal-body").append(`<p>${fullText}</p>`);
     $("#viewModalText").modal("show");
   });
+}
+
+function setupPasswordButtons() {
+  $("#eyepassword").click(function () {
+    toggleIcon(this.id);
+    toggleInput("password");
+  });
+  $("#eyerepassword").click(function () {
+    toggleIcon(this.id);
+    toggleInput("repassword");
+  });
+
+  $("#edit-eyepassword").click(function () {
+    toggleIcon(this.id);
+    toggleInput("edit-password");
+  });
+  $("#edit-eyerepassword").click(function () {
+    toggleIcon(this.id);
+    toggleInput("edit-repassword");
+  });
+}
+
+function toggleIcon(elementId) {
+  if ($("#" + elementId).attr("class") === "fas fa-eye") {
+    $("#" + elementId).attr("class", "fas fa-eye-slash");
+  } else {
+    $("#" + elementId).attr("class", "fas fa-eye");
+  }
+}
+function toggleInput(elementId) {
+  if ($("#" + elementId).attr("type") === "password") {
+    $("#" + elementId).attr("type", "text");
+  } else {
+    $("#" + elementId).attr("type", "password");
+  }
 }
