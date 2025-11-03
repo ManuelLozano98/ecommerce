@@ -130,6 +130,12 @@ class UserApi
         return ApiHelper::success($response, $user);
     }
 
+    public function getUsernames($request, $response, $args)
+    {
+        $users = $this->userService->getUsernames();
+        return ApiHelper::success($response, $users);
+    }
+
 
     public function saveUser($request, $response, $args)
     {

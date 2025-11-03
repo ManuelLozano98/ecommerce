@@ -45,7 +45,13 @@ class UserService
         if (!$user) {
             throw new NotFoundException("The user was not found or not exists");
         }
-        return $user;
+        $usernames = array_map(function ($user) {
+            return [
+                "id" => $user->getId(),
+                "username" => $user->getUsername()
+            ];
+        }, $user);
+        return $usernames;
     }
 
     public function getUserCountLast7Days()
@@ -77,7 +83,7 @@ class UserService
         if (!User::findById($id)) {
             throw new NotFoundException("The user was not found or not exists");
         }
-        
+
         if (!User::delete($id)) {
             throw new DeleteException("Failed to delete user with ID $id.");
         }
