@@ -95,6 +95,13 @@ class RoleApi
         }
     }
 
+    public function deleteRole($request, $response, $args){
+
+        $this->roleService->deleteRole($args['id']);
+        return ApiHelper::success($response, ['message' => 'Role deleted successfully']);
+
+    }
+
     private function validateRole($data)
     {
         $validator = $this->validator->make($data, [
