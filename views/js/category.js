@@ -40,7 +40,7 @@ async function insert() {
   });
   if (data) {
     notifySuccessResponse(API_MSGS.Created);
-    getCategories();
+    getDatatable("tableCategories").ajax.reload(null, false);
   }
   if (error) {
     notifyErrorResponse(error);
@@ -57,7 +57,7 @@ async function deleteItem(id) {
     });
     if (data) {
       notifySuccessResponse(API_MSGS.Deleted);
-      getCategories();
+      getDatatable("tableCategories").ajax.reload(null, false);
     }
     if (error) {
       notifyErrorResponse(error);
@@ -82,7 +82,7 @@ async function edit() {
   );
   if (data) {
     notifySuccessResponse(API_MSGS.Updated);
-    getCategories();
+    getDatatable("tableCategories").ajax.reload(null, false);
   }
   if (error) {
     console.log(error);

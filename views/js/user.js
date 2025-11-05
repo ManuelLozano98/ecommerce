@@ -237,7 +237,7 @@ async function insert() {
       );
       if (dataImage) {
         notifySuccessResponse(API_MSGS.Updated);
-        getUsers();
+        getDatatable("tableUsers").ajax.reload(null, false);
         return;
       }
       if (errorImage) {
@@ -249,7 +249,7 @@ async function insert() {
       notifyErrorResponse(error);
     }
     notifySuccessResponse(API_MSGS.Updated);
-    getUsers();
+    getDatatable("tableUsers").ajax.reload(null, false);
   }
   if (error) {
     notifyErrorResponse(error);
@@ -286,7 +286,7 @@ async function edit() {
       );
       if (dataImage) {
         notifySuccessResponse(API_MSGS.Updated);
-        getUsers();
+        getDatatable("tableUsers").ajax.reload(null, false);
         return;
       }
       if (errorImage) {
@@ -298,7 +298,7 @@ async function edit() {
       notifyErrorResponse(error);
     }
     notifySuccessResponse(API_MSGS.Updated);
-    getUsers();
+    getDatatable("tableUsers").ajax.reload(null, false);
   }
   if (error) {
     notifyErrorResponse(error);
@@ -312,7 +312,7 @@ async function deleteItem(id) {
     });
     if (data) {
       notifySuccessResponse(API_MSGS.Deleted);
-      getUsers();
+      getDatatable("tableUsers").ajax.reload(null, false);
     }
     if (error) {
       notifyErrorResponse(error);

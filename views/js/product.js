@@ -196,7 +196,7 @@ async function insert() {
       );
       if (dataImage) {
         notifySuccessResponse(API_MSGS.Created);
-        getProducts();
+        getDatatable("tableProducts").ajax.reload(null, false);
         return;
       }
       if (errorImage) {
@@ -205,7 +205,7 @@ async function insert() {
       }
     }
     notifySuccessResponse(API_MSGS.Created);
-    getProducts();
+    getDatatable("tableProducts").ajax.reload(null, false);
   }
   if (error) {
     notifyErrorResponse(error);
@@ -287,7 +287,7 @@ async function edit() {
       );
       if (dataImage) {
         notifySuccessResponse(API_MSGS.Updated);
-        getProducts();
+        getDatatable("tableProducts").ajax.reload(null, false);
         return;
       }
       if (errorImage) {
@@ -296,7 +296,7 @@ async function edit() {
       }
     }
     notifySuccessResponse(API_MSGS.Updated);
-    getProducts();
+    getDatatable("tableProducts").ajax.reload(null, false);
   }
   if (error) {
     notifyErrorResponse(error);
@@ -321,7 +321,7 @@ async function deleteItem(id) {
     });
     if (data) {
       notifySuccessResponse(API_MSGS.Deleted);
-      getProducts();
+      getDatatable("tableProducts").ajax.reload(null, false);
     }
     if (error) {
       notifyErrorResponse(error);
