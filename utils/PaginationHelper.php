@@ -177,4 +177,30 @@ class PaginationHelper
         }
         return ["where" => $whereClause, "types" => $types, "params" => $params];
     }
+    public static function paginateJson($json, $params)
+    {
+        $dataArray = json_decode($json, true);
+        if (!isset($dataArray['data']) || !is_array($dataArray['data'])) {
+            return [
+                'status' => 'error',
+                'message' => 'Invalid JSON structure'
+            ];
+        }
+
+
+        $start = (int)($params['start'] ?? 0);
+        $length = (int)($params['length'] ?? 10);
+        $search = $params['search']['value'];
+
+        $totalRecords = count($dataArray['data']);
+
+        $pagedData = array_slice($dataArray['data'], $start, $length);
+
+        return [
+            'status' => 'success',
+            'recordsTotal' => $totalRecords,
+            'recordsFiltered' => $totalRecords,
+            'data' => $pagedData
+        ];
+    }
 }
