@@ -24,28 +24,36 @@ function getButtonsDataTable() {
       extend: "copy",
       text: "Copy",
       exportOptions: {
-        columns: ":visible:not(.no-export)",
+        columns: ":not(.no-export)",
+        format: {
+          body: function (data, row, column, node) {
+            return getFullTextForExport(node);
+          },
+        },
       },
     },
     {
       extend: "csv",
       text: "CSV",
       exportOptions: {
-        columns: ":visible:not(.no-export)",
+        columns: ":not(.no-export)",
+        format: {
+          body: function (data, row, column, node) {
+            return getFullTextForExport(node);
+          },
+        },
       },
     },
     {
       extend: "excel",
       text: "Excel",
       exportOptions: {
-        columns: ":visible:not(.no-export)",
-      },
-    },
-    {
-      extend: "pdf",
-      text: "PDF",
-      exportOptions: {
-        columns: ":visible:not(.no-export)",
+        columns: ":not(.no-export)",
+        format: {
+          body: function (data, row, column, node) {
+            return getFullTextForExport(node);
+          },
+        },
       },
     },
     { extend: "colvis", text: "Column visibility" },
@@ -206,6 +214,15 @@ function checkForm(form) {
 
 function getDatatable(elementId) {
   return $("#" + elementId).DataTable();
+}
+
+function getFullTextForExport(node) {
+  $isImg = $(node).find("img");
+  if ($isImg.length > 0) {
+    return $isImg.attr("src");
+  }
+  $fullData = $(node).find(".view-full-text").data("full");
+  return $fullData ? decodeURIComponent($fullData) : $(node).text();
 }
 
 closeModalDialog();
