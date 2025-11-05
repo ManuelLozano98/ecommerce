@@ -14,6 +14,28 @@ require_once __DIR__ . '/layout/header.php';
     .roles:hover {
         background-color: #dc3545 !important;
     }
+
+    #records-usersroles {
+        position: relative;
+    }
+
+    #tableUsersRoles {
+        position: relative;
+    }
+
+    #loader-container {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10;
+        pointer-events: none;
+
+    }
 </style>
 <?php require_once __DIR__ . '/layout/endheader.php'; ?>
 
@@ -236,7 +258,12 @@ require_once __DIR__ . '/layout/header.php';
                                                 </div>
                                                 <!-- /.card-header -->
                                                 <div class="card-body">
-                                                    <div class="card-body" id="records">
+                                                    <!-- Gif loader -->
+                                                    <div id="loader-container">
+                                                        <div class="loader" style="display: none;">
+                                                        </div>
+                                                    </div>
+                                                    <div class="card-body" id="records-usersroles">
                                                         <table id="tableUsersRoles"
                                                             class="table table-bordered table-hover">
                                                             <thead>
@@ -362,11 +389,7 @@ require_once __DIR__ . '/layout/header.php';
                 <!-- /.modal-dialog -->
             </div>
 
-            <!-- Gif loader -->
-            <div id="loader-container">
-                <div class="loader" style="display: none;">
-                </div>
-            </div>
+
 
 
 
