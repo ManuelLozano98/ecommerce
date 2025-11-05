@@ -4,6 +4,7 @@ namespace App\Api;
 
 use App\Services\UserRoleService;
 use App\Utils\ApiHelper;
+use App\Utils\PaginationHelper;
 
 class UserRoleApi
 {
@@ -17,6 +18,16 @@ class UserRoleApi
     {
         $userRole = $this->userRoleService->getUserRoles();
         return ApiHelper::success($response, $userRole);
+    }
+    public function getUserRolesDetailed($request, $response, $args)
+    {
+        $usersRoles = $this->userRoleService->getUserRolesDetailedJSON();
+        $params = $request->getQueryParams();
+        if (isset($params["start"]) && isset($params["length"])) { // If start and length are present as query params pagination is applied
+            $data = PaginationHelper::paginateJSON($usersRoles, $params);
+            $response->getBody()->write(json_encode($data));
+            return $response->withStatus(200)->withHeader('Content-Type', 'application/json');
+        }
     }
 
 
@@ -37,6 +48,20 @@ class UserRoleApi
             $this->userRoleService->deleteUserRole($role->getId());
         }
         $roleService->deleteRole($args['id']);
+        return ApiHelper::success($response, ['message' => 'Role deleted successfully']);
+    }
+    public function deleteRolesByUserId($request, $response, $args)
+    {
+        $userRoles = $this->userRoleService->getUserRolesbyUserId($args["user_id"]);
+        foreach ($userRoles as $userRole) {
+            $this->userRoleService->deleteUserRole($userRole->getId());
+        }
+        return ApiHelper::success($response, ['message' => 'All roles deleted successfully']);
+    }
+    public function deletebyUserIdAndRoleId($request, $response, $args)
+    {
+        $userRole = $this->userRoleService->getUserRolebyUserIdAndRoleId($args["id"], $args["role_id"]);
+        $this->userRoleService->deleteUserRole($userRole->getId());
         return ApiHelper::success($response, ['message' => 'Role deleted successfully']);
     }
 }

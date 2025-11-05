@@ -42,7 +42,10 @@ return function (App $app) {
     $app->delete('/api/users/{id:[0-9]+}/', [$userApi, 'deleteUser']);
 
     $app->get('/api/users/roles/', [$userRoleApi, 'getUserRoles']);
+    $app->get('/api/users/roles/detailed/', [$userRoleApi, 'getUserRolesDetailed']);
     $app->post('/api/users/{id:[0-9]+}/roles/', [$userRoleApi, 'saveUserRole']);
+    $app->delete('/api/users/{user_id:[0-9]+}/roles/', [$userRoleApi, 'deleteRolesByUserId']);
+    $app->delete('/api/users/{id:[0-9]+}/roles/{role_id:[0-9]+}/', [$userRoleApi, 'deletebyUserIdAndRoleId']);
 
     $app->get('/api/roles/name/', [$roleApi, 'getRolesName']);
     $app->get('/api/roles/', [$roleApi, 'getRoles']);
