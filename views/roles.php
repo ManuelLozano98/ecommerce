@@ -6,7 +6,15 @@ require_once __DIR__ . '/layout/header.php';
 <!-- Select 2 -->
 <link rel="stylesheet" href="<?php echo ADMINLTE ?>plugins/select2/css/select2.min.css">
 <link rel="stylesheet" href="<?php echo ADMINLTE ?>plugins/select2-bootstrap4-theme/select2-bootstrap4.min.css">
+<style>
+    .roles {
+        cursor: pointer;
+    }
 
+    .roles:hover {
+        background-color: #dc3545 !important;
+    }
+</style>
 <?php require_once __DIR__ . '/layout/endheader.php'; ?>
 
 <body class="hold-transition sidebar-mini">
@@ -188,7 +196,7 @@ require_once __DIR__ . '/layout/header.php';
                 </div><!-- /.row -->
             </section><!-- /.content -->
 
-           
+
             <!-- Full description modal -->
             <div class="modal fade" id="viewModalText">
                 <div class="modal-dialog">
@@ -207,6 +215,159 @@ require_once __DIR__ . '/layout/header.php';
                     </div>
                 </div>
             </div>
+            <section class="content">
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="box">
+                            <div class="box-header with-border">
+                                <div class="box-tools pull-right">
+                                </div>
+                                <div class="container-fluid">
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <div class="card">
+                                                <div class="card-header">
+                                                    <h2 class="box-title">Users with Roles <button
+                                                            class="btn btn-success" id="addUserRolesBtn"
+                                                            data-toggle="modal" data-target="#modal-add-user-roles"><i
+                                                                class="fa fa-plus-circle"></i>
+                                                            Add</button></h2>
+                                                    <h3 class="card-title">Data</h3>
+                                                </div>
+                                                <!-- /.card-header -->
+                                                <div class="card-body">
+                                                    <div class="card-body" id="records">
+                                                        <table id="tableUsersRoles"
+                                                            class="table table-bordered table-hover">
+                                                            <thead>
+                                                                <th>User</th>
+                                                                <th>Roles</th>
+                                                                <th>Actions</th>
+                                                            </thead>
+                                                            <tbody>
+                                                            </tbody>
+                                                        </table>
+                                                        <tfoot>
+                                                            <tr>
+                                                                <td>
+                                                                    <p style="color: red;">* If you click on the role name, you can delete it.</p>
+                                                                </td>
+                                                            </tr>
+                                                        </tfoot>
+                                                    </div>
+
+
+                                                </div><!-- /.card-body -->
+                                            </div><!-- /.card -->
+                                        </div><!-- /.col-12 -->
+                                    </div><!-- /.row -->
+                                </div><!-- /.container-fluid -->
+                            </div><!-- /.box-header -->
+                        </div><!-- /.box -->
+                    </div><!-- /.cold-md-12 -->
+                </div><!-- /.row -->
+            </section><!-- /.content -->
+
+            <div class="modal fade" id="modal-add-default">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h4 class="modal-title">Add Roles to this User</h4>
+                            <input type="hidden" value="" id="thisUser" />
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span>&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <form name="form-roles" id="form-roles" method="POST">
+                                <div class="row">
+                                    <div class="col-sm-12">
+                                        <div class="form-group">
+                                            <label for="roles-users2">Role</label>
+                                            <input type="hidden" name="role_id" id="idrole">
+                                            <div class="select2-green">
+                                                <select class="select2" multiple="multiple"
+                                                    data-placeholder="Select Roles"
+                                                    data-dropdown-css-class="select2-green" style="width: 100%;"
+                                                    name="role_id[]" id="roles-users2">
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+
+
+                                </div>
+                                <div class="modal-footer justify-content-between">
+                                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                                    <button id="saveRole" type="submit" class="btn btn-primary">Save
+                                        changes</button>
+                                </div>
+
+                            </form>
+                        </div>
+
+                    </div>
+                    <!-- /.modal-content -->
+                </div>
+                <!-- /.modal-dialog -->
+            </div>
+
+            <div class="modal fade" id="modal-add-user-roles">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h4 class="modal-title">Add Roles to User</h4>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span>&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <form name="form-users-roles" id="form-users-roles" method="POST">
+                                <div class="row">
+                                    <div class="col-sm-12">
+                                        <label for="users-roles">Users</label>
+                                        <div class="select2-green">
+                                            <select class="select2" multiple="multiple" data-placeholder="Select Users"
+                                                data-dropdown-css-class="select2-green" style="width: 100%;"
+                                                name="user_id[]" id="users-roles">
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-12">
+                                        <div class="form-group">
+                                            <label for="roles-users">Roles</label>
+                                            <input type="hidden" name="role_id" id="idrole">
+                                            <div class="select2-green">
+                                                <select class="select2" multiple="multiple"
+                                                    data-placeholder="Select Roles"
+                                                    data-dropdown-css-class="select2-green" style="width: 100%;"
+                                                    name="role_id[]" id="roles-users">
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="modal-footer justify-content-between">
+                                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                                    <button id="saveUser" type="submit" class="btn btn-primary">Save
+                                        changes</button>
+                                </div>
+
+                            </form>
+                        </div>
+
+                    </div>
+                    <!-- /.modal-content -->
+                </div>
+                <!-- /.modal-dialog -->
+            </div>
+
+            <!-- Gif loader -->
+            <div id="loader-container">
+                <div class="loader" style="display: none;">
+                </div>
+            </div>
+
 
 
 
