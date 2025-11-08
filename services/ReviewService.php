@@ -59,6 +59,16 @@ class ReviewService
         }
         throw new NotFoundException("The review was not found or does not exits");
     }
+    public function getProductReview($productId, $reviewId)
+    {
+        $reviews = $this->getReviewsByProduct($productId);
+        foreach ($reviews as $review) {
+            if ($review->getId() === $reviewId) {
+                return $review;
+            }
+        }
+        throw new NotFoundException("The review was not found or does not exits");
+    }
     public function deleteReview($id)
     {
         if (!Review::findById($id)) {
