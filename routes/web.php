@@ -8,6 +8,7 @@ use App\Controllers\CategoryController;
 use App\Controllers\ProductController;
 use App\Controllers\RoleController;
 use App\Controllers\UserController;
+use App\Controllers\ReviewController;
 
 return function (App $app) {
 
@@ -16,6 +17,7 @@ return function (App $app) {
     $productController = new ProductController($renderer);
     $userController = new UserController($renderer);
     $roleController = new RoleController($renderer);
+    $reviewController = new ReviewController($renderer);
 
     $app->get('/', function ($request, $response) {
         $response->getBody()->write('Welcome to the E-commerce');
@@ -37,5 +39,8 @@ return function (App $app) {
     });
     $app->get('/roles/', function ($request, $response, $args) use ($roleController) {
         return $roleController->index($request, $response, $args);
+    });
+    $app->get('/reviews/', function ($request, $response, $args) use ($reviewController) {
+        return $reviewController->index($request, $response, $args);
     });
 };
