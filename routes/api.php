@@ -6,6 +6,7 @@ use App\Api\ProductApi;
 use App\Api\RoleApi;
 use App\Api\UserApi;
 use App\Api\UserRoleApi;
+use App\Api\ReviewApi;
 
 return function (App $app) {
     $categoryApi = new CategoryApi();
@@ -13,6 +14,7 @@ return function (App $app) {
     $roleApi = new RoleApi();
     $userApi = new UserApi();
     $userRoleApi = new UserRoleApi();
+    $reviewApi = new ReviewApi();
     $app->get('/api/categories/name/', [$categoryApi, 'getCategoriesName']);
     $app->get('/api/categories/', [$categoryApi, 'getCategories']);
     $app->get('/api/categories/{id:[0-9]+}/', [$categoryApi, 'getCategoryById']);
@@ -31,6 +33,10 @@ return function (App $app) {
     $app->put('/api/products/{id:[0-9]+}/', [$productApi, 'saveProduct']);
     $app->delete('/api/products/{id:[0-9]+}/', [$productApi, 'deleteProduct']);
 
+    $app->get('/api/products/{id:[0-9]+}/reviews/', [$reviewApi, 'getProductReviews']);
+    $app->delete('/api/products/{id:[0-9]+}/reviews/', [$reviewApi, 'deleteReviewsbyProduct']);
+    $app->delete('/api/products/{product_id:[0-9]+}/reviews/{review_id:[0-9]+}/', [$reviewApi, 'deleteReviewbyProduct']);
+
     $app->get('/api/users/documentType/', [$userApi, 'getDocumentType']);
     $app->get('/api/users/', [$userApi, 'getUsers']);
     $app->get('/api/users/detailed/', [$userApi, 'getUsersDetailed']);
@@ -47,10 +53,23 @@ return function (App $app) {
     $app->delete('/api/users/{user_id:[0-9]+}/roles/', [$userRoleApi, 'deleteRolesByUserId']);
     $app->delete('/api/users/{id:[0-9]+}/roles/{role_id:[0-9]+}/', [$userRoleApi, 'deletebyUserIdAndRoleId']);
 
+    $app->get('/api/users/{id:[0-9]+}/reviews/', [$reviewApi, 'getUserReviews']);
+    $app->delete('/api/users/{id:[0-9]+}/reviews/', [$reviewApi, 'deleteReviewsbyUser']);
+    $app->delete('/api/users/{user_id:[0-9]+}/reviews/{review_id:[0-9]+}/', [$reviewApi, 'deleteReviewbyUser']);
+
+
     $app->get('/api/roles/name/', [$roleApi, 'getRolesName']);
     $app->get('/api/roles/', [$roleApi, 'getRoles']);
     $app->get('/api/roles/{id:[0-9]+}/', [$roleApi, 'getRoleById']);
     $app->post('/api/roles/', [$roleApi, 'saveRole']);
     $app->put('/api/roles/{id:[0-9]+}/', [$roleApi, 'saveRole']);
     $app->delete('/api/roles/{id:[0-9]+}/', [$userRoleApi, 'deleteUserRoles']);
+
+
+    $app->get('/api/reviews/', [$reviewApi, 'getReviews']);
+    $app->get('/api/reviews/detailed/', [$reviewApi, 'getDetailedReviews']);
+    $app->get('/api/reviews/{id:[0-9]+}/', [$reviewApi, 'getReviewById']);
+    $app->post('/api/reviews/', [$reviewApi, 'saveReview']);
+    $app->put('/api/reviews/{id:[0-9]+}/', [$reviewApi, 'saveReview']);
+    $app->delete('/api/reviews/{id:[0-9]+}/', [$reviewApi, 'deleteReview']);
 };
