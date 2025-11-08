@@ -20,3 +20,4 @@ Thumbs.db
 docker-compose.override.yml
 nbproject/
 public/adminlte/*
+uploads/*
