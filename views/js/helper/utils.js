@@ -24,28 +24,36 @@ function getButtonsDataTable() {
       extend: "copy",
       text: "Copy",
       exportOptions: {
-        columns: ":visible:not(.no-export)",
+        columns: ":not(.no-export)",
+        format: {
+          body: function (data, row, column, node) {
+            return getFullTextForExport(node);
+          },
+        },
       },
     },
     {
       extend: "csv",
       text: "CSV",
       exportOptions: {
-        columns: ":visible:not(.no-export)",
+        columns: ":not(.no-export)",
+        format: {
+          body: function (data, row, column, node) {
+            return getFullTextForExport(node);
+          },
+        },
       },
     },
     {
       extend: "excel",
       text: "Excel",
       exportOptions: {
-        columns: ":visible:not(.no-export)",
-      },
-    },
-    {
-      extend: "pdf",
-      text: "PDF",
-      exportOptions: {
-        columns: ":visible:not(.no-export)",
+        columns: ":not(.no-export)",
+        format: {
+          body: function (data, row, column, node) {
+            return getFullTextForExport(node);
+          },
+        },
       },
     },
     { extend: "colvis", text: "Column visibility" },
@@ -107,7 +115,7 @@ function notifyErrorResponse(res) {
   let details = "";
 
   try {
-    message = res.message || "Request error";
+    message = res.message || res.error;
 
     if (res.details) {
       const detailsObj = res.details;
@@ -124,11 +132,12 @@ function notifyErrorResponse(res) {
     console.error("Server response: ", res);
     return;
   }
-
-  toastr.error(`Error: ${message} - ${details}`);
+  if (details) {
+    toastr.error(`Error: ${message} - ${details}`);
+  } else {
+    toastr.error(`Error: ${message}`);
+  }
 }
-
-
 
 function notifySuccessResponse(action) {
   toastr.success(action || API_MSGS.General);
@@ -181,6 +190,9 @@ async function apiRequest(url, options = {}) {
 }
 
 function truncateText(data) {
+  if (!data || data === "") {
+    return data;
+  }
   const truncated = data.length > 30 ? data.substring(0, 30) + "..." : data;
   if (truncated.substring(0, truncated.indexOf("..."))) {
     return `<span>${truncated}</span>
@@ -198,6 +210,19 @@ function checkForm(form) {
     return false;
   }
   return true;
+}
+
+function getDatatable(elementId) {
+  return $("#" + elementId).DataTable();
+}
+
+function getFullTextForExport(node) {
+  $isImg = $(node).find("img");
+  if ($isImg.length > 0) {
+    return $isImg.attr("src");
+  }
+  $fullData = $(node).find(".view-full-text").data("full");
+  return $fullData ? decodeURIComponent($fullData) : $(node).text();
 }
 
 closeModalDialog();

@@ -132,11 +132,12 @@ class PaginationHelper
     {
         $validDirections = ['asc', 'desc'];
 
+        $defaultOrderDir = "desc";
         $start = (int)($params['start'] ?? 0);
         $length = (int)($params['length'] ?? 10);
         $search = $params['search']['value'] ?? '';
         $orderColumnIndex = $params['order'][0]['column'] ?? 0;
-        $orderDir = strtolower($params['order'][0]['dir'] ?? 'asc');
+        $orderDir = $params['order'][0]['dir'] === $defaultOrderDir ? 'asc' : 'desc';
 
         $orderBy = $validColumns[$orderColumnIndex] ?? $validColumns[0];
         $orderDir = in_array($orderDir, $validDirections) ? strtoupper($orderDir) : 'ASC';
@@ -176,5 +177,58 @@ class PaginationHelper
             $whereClause = 'WHERE ' . implode(' AND ', $whereParts);
         }
         return ["where" => $whereClause, "types" => $types, "params" => $params];
+    }
+    public static function paginateJson($json, $params)
+    {
+        $dataArray = json_decode($json, true);
+        if (!isset($dataArray['data']) || !is_array($dataArray['data'])) {
+            return [
+                'status' => 'error',
+                'message' => 'Invalid JSON structure'
+            ];
+        }
+
+
+        $start = (int)($params['start'] ?? 0);
+        $length = (int)($params['length'] ?? 10);
+        $search = $params['search']['value'] ?? '';
+        $orderColumnIndex = (int)($params['order'][0]['column'] ?? 0);
+        $defaultOrderDir = "desc";
+        $orderDir = $params['order'][0]['dir'] === $defaultOrderDir ? 'asc' : 'desc';
+        $data = $dataArray['data'];
+        $row = array_values($data)[0];
+        $terms = explode(' ', strtolower(trim($search)));
+
+        if ($search !== '') {
+            $data = array_filter($data, function ($row) use ($terms) {
+                foreach ($row as $value) {
+                    if (is_array($value)) {
+                        return false;
+                    }
+
+                    foreach ($terms as $term) {
+                        if (str_contains(strtolower($value), $term)) {
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            });
+        }
+        $totalRecords = count($data);
+        $columns = array_keys($row);
+        $orderBy = $columns[$orderColumnIndex] ?? $columns[0];
+        $orderColumnValues = array_column($data, $orderBy);
+        $sortFlag = $orderDir === 'desc' ? SORT_DESC : SORT_ASC;
+        array_multisort($orderColumnValues, $sortFlag, $data);
+
+        $pagedData = array_slice($data, $start, $length);
+
+        return [
+            'status' => 'success',
+            'recordsTotal' => $totalRecords,
+            'recordsFiltered' => $totalRecords,
+            'data' => $pagedData
+        ];
     }
 }

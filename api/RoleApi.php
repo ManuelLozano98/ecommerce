@@ -2,33 +2,30 @@
 
 namespace App\Api;
 
-use App\Services\CategoryService;
-use App\Services\ProductService;
-use App\Models\Category;
+use App\Services\RoleService;
+use App\Models\Role;
 use App\Utils\ApiHelper;
 use Rakit\Validation\Validator;
 use Rakit\Validation\ErrorBag;
 use App\Utils\PaginationHelper;
 
-class CategoryApi
+class RoleApi
 {
-    private CategoryService $categoryService;
-    private ProductService $productService;
+    private RoleService $roleService;
     private Validator $validator;
 
     public function __construct()
     {
-        $this->categoryService = new CategoryService();
-        $this->productService = new ProductService();
+        $this->roleService = new RoleService();
         $this->validator = new Validator();
     }
 
 
-    public function getCategories($request, $response, $args)
+    public function getRoles($request, $response, $args)
     {
         $params = $request->getQueryParams();
         if (isset($params["start"]) && isset($params["length"])) { // If start and length are present as query params pagination is applied 
-            $tableName = "categories";
+            $tableName = "roles";
             $search = $params['search']['value'] ?? '';
             $columns = ['id', 'name', 'description', 'active'];
             $data = PaginationHelper::make($params, $tableName, $columns);
@@ -48,33 +45,33 @@ class CategoryApi
             return $response->withStatus(200)->withHeader('Content-Type', 'application/json');
         }
 
-        $categories = $this->categoryService->getCategories();
-        if (!$categories) {
-            return ApiHelper::error($response, ['message' => 'No categories found'], 404);
+        $roles = $this->roleService->getRoles();
+        if (!$roles) {
+            return ApiHelper::error($response, ['message' => 'No roles found'], 404);
         }
-        return ApiHelper::success($response, $categories);
+        return ApiHelper::success($response, $roles);
     }
 
 
-    public function getCategoryById($request, $response, $args)
+    public function getRoleById($request, $response, $args)
     {
-        $category = $this->categoryService->getCategory($args['id']);
-        return ApiHelper::success($response, $category);
+        $role = $this->roleService->getRole($args['id']);
+        return ApiHelper::success($response, $role);
     }
 
 
-    public function getCategoriesName($request, $response, $args)
+    public function getRolesName($request, $response, $args)
     {
-        $categories = $this->categoryService->getCategoriesName();
-        $category = array_map(fn(Category $c) => [
-            'id' => (int) $c->getId(),
-            'name' => $c->getName()
-        ], $categories);
-        return ApiHelper::success($response, $category);
+        $roles = $this->roleService->getRolesName();
+        $role = array_map(fn(Role $r) => [
+            'id' => (int) $r->getId(),
+            'name' => $r->getName()
+        ], $roles);
+        return ApiHelper::success($response, $role);
     }
 
 
-    public function saveCategory($request, $response, $args)
+    public function saveRole($request, $response, $args)
     {
         $body = $request->getBody()->getContents();
         $data = json_decode($body, true);
@@ -88,26 +85,24 @@ class CategoryApi
             $method = "POST";
         }
 
-        $isValid = $this->validateCategory($data);
+        $isValid = $this->validateRole($data);
         if (is_object($isValid) && $isValid instanceof ErrorBag) {
             $errors = $isValid->toArray();
             return ApiHelper::error($response, ['message' => 'Invalid input data', 'details' => $errors], 400);
         } else {
-            $data = $this->categoryService->saveCategory($method, $data);
+            $data = $this->roleService->saveRole($method, $data);
             return ApiHelper::success($response, $data);
         }
     }
 
+    public function deleteRole($request, $response, $args){
 
+        $this->roleService->deleteRole($args['id']);
+        return ApiHelper::success($response, ['message' => 'Role deleted successfully']);
 
-    public function deleteCategory($request, $response, $args)
-    {
-        $this->categoryService->deleteCategory($args['id'], $this->productService);
-        return ApiHelper::success($response, ['message' => 'Category deleted successfully']);
     }
 
-
-    private function validateCategory($data)
+    private function validateRole($data)
     {
         $validator = $this->validator->make($data, [
             'name' => 'required|regex:/^.{3,70}$/u',

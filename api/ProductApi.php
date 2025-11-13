@@ -2,7 +2,6 @@
 
 namespace App\Api;
 
-use App\Services\CategoryService;
 use App\Services\ProductService;
 use App\Models\Product;
 use App\Utils\ApiHelper;
@@ -13,13 +12,11 @@ use App\Utils\PaginationHelper;
 class ProductApi
 {
     private ProductService $productService;
-    private CategoryService $categoryService;
     private Validator $validator;
 
     public function __construct()
     {
-        $this->categoryService = new CategoryService();
-        $this->productService = new ProductService($this->categoryService);
+        $this->productService = new ProductService();
         $this->validator = new Validator();
     }
 
