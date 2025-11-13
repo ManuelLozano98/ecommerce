@@ -109,8 +109,8 @@ class ReviewApi
             return $response->withStatus(200)->withHeader('Content-Type', 'application/json');
         }
 
-        $products = $this->productService->getProductsDetailed();
-        return ApiHelper::success($response, $products);
+        $reviews = $this->reviewService->getReviews();
+        return ApiHelper::success($response, $reviews);
     }
 
 
