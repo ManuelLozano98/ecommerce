@@ -19,7 +19,7 @@ class CategoryApi
     public function __construct()
     {
         $this->categoryService = new CategoryService();
-        $this->productService = new ProductService($this->categoryService);
+        $this->productService = new ProductService();
         $this->validator = new Validator();
     }
 

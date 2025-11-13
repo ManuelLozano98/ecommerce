@@ -14,11 +14,22 @@ use App\Exceptions\NotFoundException;
 
 class ProductService
 {
-    private CategoryService $categoryService;
+    private ?CategoryService $categoryService = null;
 
-    public function __construct(CategoryService $categoryService)
+
+    public function __construct() {}
+
+    public function createCategoryService(CategoryService $categoryService)
     {
         $this->categoryService = $categoryService;
+        return $this->categoryService;
+    }
+    public function create()
+    {
+        if ($this->categoryService === null) {
+            $this->categoryService = new CategoryService();
+        }
+        return $this->categoryService;
     }
 
     public function getProducts()
@@ -77,6 +88,7 @@ class ProductService
             if (Product::findByCode($rawProduct["code"])) {
                 throw new DuplicateException("The product code already exists " . $rawProduct["code"]);
             }
+            $this->categoryService = $this->create();
             if (!$this->categoryService->getCategory($rawProduct["category_id"])) {
                 throw new InsertException("Failed to add product with category ID " . $rawProduct["category_id"]);
             }
@@ -105,6 +117,7 @@ class ProductService
             if ($productCodeDB && $productCodeDB->getId() !== $productDb->getId()) {
                 throw new DuplicateException("The product code already exists " . $rawProduct["code"]);
             }
+            $this->categoryService = $this->create();
             if (!$this->categoryService->getCategory($rawProduct["category_id"])) {
                 throw new ForeignKeyException("The category was not found or not exists " . $rawProduct["category_id"]);
             }
