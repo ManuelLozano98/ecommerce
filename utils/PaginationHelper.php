@@ -132,11 +132,12 @@ class PaginationHelper
     {
         $validDirections = ['asc', 'desc'];
 
+        $defaultOrderDir = "desc";
         $start = (int)($params['start'] ?? 0);
         $length = (int)($params['length'] ?? 10);
         $search = $params['search']['value'] ?? '';
         $orderColumnIndex = $params['order'][0]['column'] ?? 0;
-        $orderDir = strtolower($params['order'][0]['dir'] ?? 'asc');
+        $orderDir = $params['order'][0]['dir'] === $defaultOrderDir ? 'asc' : 'desc';
 
         $orderBy = $validColumns[$orderColumnIndex] ?? $validColumns[0];
         $orderDir = in_array($orderDir, $validDirections) ? strtoupper($orderDir) : 'ASC';
