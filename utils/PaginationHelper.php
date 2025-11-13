@@ -190,11 +190,38 @@ class PaginationHelper
 
         $start = (int)($params['start'] ?? 0);
         $length = (int)($params['length'] ?? 10);
-        $search = $params['search']['value'];
+        $search = $params['search']['value'] ?? '';
+        $orderColumnIndex = (int)($params['order'][0]['column'] ?? 0);
+        $defaultOrderDir = "desc";
+        $orderDir = $params['order'][0]['dir'] === $defaultOrderDir ? 'asc' : 'desc';
+        $data = $dataArray['data'];
+        $row = array_values($data)[0];
+        $terms = explode(' ', strtolower(trim($search)));
 
-        $totalRecords = count($dataArray['data']);
+        if ($search !== '') {
+            $data = array_filter($data, function ($row) use ($terms) {
+                foreach ($row as $value) {
+                    if (is_array($value)) {
+                        return false;
+                    }
 
-        $pagedData = array_slice($dataArray['data'], $start, $length);
+                    foreach ($terms as $term) {
+                        if (str_contains(strtolower($value), $term)) {
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            });
+        }
+        $totalRecords = count($data);
+        $columns = array_keys($row);
+        $orderBy = $columns[$orderColumnIndex] ?? $columns[0];
+        $orderColumnValues = array_column($data, $orderBy);
+        $sortFlag = $orderDir === 'desc' ? SORT_DESC : SORT_ASC;
+        array_multisort($orderColumnValues, $sortFlag, $data);
+
+        $pagedData = array_slice($data, $start, $length);
 
         return [
             'status' => 'success',
