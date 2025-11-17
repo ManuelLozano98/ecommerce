@@ -7,6 +7,7 @@ use App\Api\RoleApi;
 use App\Api\UserApi;
 use App\Api\UserRoleApi;
 use App\Api\ReviewApi;
+use App\Api\SaleApi;
 
 return function (App $app) {
     $categoryApi = new CategoryApi();
@@ -15,6 +16,7 @@ return function (App $app) {
     $userApi = new UserApi();
     $userRoleApi = new UserRoleApi();
     $reviewApi = new ReviewApi();
+    $saleApi = new SaleApi();
     $app->get('/api/categories/name/', [$categoryApi, 'getCategoriesName']);
     $app->get('/api/categories/', [$categoryApi, 'getCategories']);
     $app->get('/api/categories/{id:[0-9]+}/', [$categoryApi, 'getCategoryById']);
@@ -72,4 +74,11 @@ return function (App $app) {
     $app->post('/api/reviews/', [$reviewApi, 'saveReview']);
     $app->put('/api/reviews/{id:[0-9]+}/', [$reviewApi, 'saveReview']);
     $app->delete('/api/reviews/{id:[0-9]+}/', [$reviewApi, 'deleteReview']);
+
+    $app->get('/api/sales/', [$saleApi, 'getSales']);
+    $app->get('/api/sales/detailed/', [$saleApi, 'getDetailedSales']);
+    $app->get('/api/sales/{id:[0-9]+}/', [$saleApi, 'getSale']);
+    $app->post('/api/sales/', [$saleApi, 'saveSale']);
+    $app->put('/api/sales/{id:[0-9]+}/', [$saleApi, 'saveSale']);
+    $app->delete('/api/sales/{id:[0-9]+}/', [$saleApi, 'deleteSale']);
 };
