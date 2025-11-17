@@ -9,6 +9,7 @@ use App\Controllers\ProductController;
 use App\Controllers\RoleController;
 use App\Controllers\UserController;
 use App\Controllers\ReviewController;
+use App\Controllers\SaleController;
 
 return function (App $app) {
 
@@ -18,6 +19,7 @@ return function (App $app) {
     $userController = new UserController($renderer);
     $roleController = new RoleController($renderer);
     $reviewController = new ReviewController($renderer);
+    $saleController = new SaleController($renderer);
 
     $app->get('/', function ($request, $response) {
         $response->getBody()->write('Welcome to the E-commerce');
@@ -42,5 +44,8 @@ return function (App $app) {
     });
     $app->get('/reviews/', function ($request, $response, $args) use ($reviewController) {
         return $reviewController->index($request, $response, $args);
+    });
+    $app->get('/sales/', function ($request, $response, $args) use ($saleController) {
+        return $saleController->index($request, $response, $args);
     });
 };
