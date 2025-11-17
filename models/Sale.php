@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Utils\DatabaseHelper;
+use App\Enums\PaymentMethods;
+use App\Enums\SaleStatus;
 use JsonSerializable;
 
 class Sale implements JsonSerializable
@@ -10,10 +12,12 @@ class Sale implements JsonSerializable
     private int $id;
     private int $user_id;
     private float $total_amount;
-    private string $payment_method;
-    private string $status;
+    // private string $payment_method;
+    // private string $status;
     private string $created_at;
     private string $updated_at;
+    private PaymentMethods $payment_method;
+    private SaleStatus $status;
 
     public function jsonSerialize(): mixed
     {
@@ -26,8 +30,12 @@ class Sale implements JsonSerializable
         $this->id = $data['id'] ?? 0;
         $this->user_id = $data['user_id'] ?? 0;
         $this->total_amount = $data['total_amount'] ?? 0.00;
-        $this->payment_method = $data['payment_method'] ?? '';
-        $this->status = $data['status'] ?? 'pending';
+        $this->payment_method = isset($data['payment_method'])
+            ? PaymentMethods::tryFrom(str_replace(" ", "_", strtolower($data['payment_method']))) ?? PaymentMethods::CREDIT_CARD
+            : PaymentMethods::CREDIT_CARD;
+        $this->status = isset($data['status'])
+            ? SaleStatus::tryFrom(str_replace(" ", "_", strtolower($data['status']))) ?? SaleStatus::PENDING
+            : SaleStatus::PENDING;
         $this->created_at = $data['created_at'] ?? date('Y-m-d H:i:s');
         $this->updated_at = $data['updated_at'] ?? '';
     }
@@ -38,8 +46,8 @@ class Sale implements JsonSerializable
             'id' => $this->id,
             'user_id' => $this->user_id,
             'created_at' => $this->created_at,
-            'payment_method' => $this->payment_method,
-            'status' => $this->status,
+            'payment_method' => $this->getPaymentMethod(),
+            'status' => $this->getStatus(),
             'total_amount' => $this->total_amount,
             'updated_at' => $this->updated_at
         ];
@@ -162,11 +170,11 @@ class Sale implements JsonSerializable
     }
     public function getPaymentMethod()
     {
-        return $this->payment_method;
+        return str_replace("_", " ", ucwords($this->payment_method->value, "_"));
     }
     public function getStatus()
     {
-        return $this->status;
+        return str_replace("_", " ", ucwords($this->status->value, "_"));
     }
     public function getCreatedAt()
     {
@@ -191,11 +199,11 @@ class Sale implements JsonSerializable
     }
     public function setPaymentMethod($method)
     {
-        $this->payment_method = $method;
+        $this->payment_method = PaymentMethods::tryFrom(strtolower($method)) ?? PaymentMethods::CREDIT_CARD;
     }
     public function setStatus($status)
     {
-        $this->status = $status;
+        $this->status = SaleStatus::tryFrom(strtolower($status)) ?? SaleStatus::PENDING;
     }
     public function setCreatedAt($datetime)
     {
