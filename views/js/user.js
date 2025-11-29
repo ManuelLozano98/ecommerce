@@ -19,6 +19,10 @@ $(document).ready(function () {
       redirectTab("#form");
     }
   });
+  $(document).on("click", "#addBtn", async function () {
+    loadDocumentTypes("document_type");
+  });
+
   loadDeleteButton();
   showFullText();
   setupPasswordButtons();
