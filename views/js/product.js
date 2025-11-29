@@ -17,6 +17,16 @@ $(document).ready(function () {
     }
   });
 
+  $(document).on("click", "#addBtn", function () {
+    let select = getById("categorySelect");
+    setupSelect(select);
+  });
+
+  $(document).on("click", "[id^='btn-edit']", function () {
+    let select = getById("edit-categorySelect");
+    setupSelect(select);
+  });
+
   loadCategories("categorySelect");
   showFullText();
   loadEditForm();
@@ -150,7 +160,6 @@ async function loadCategories(selectId, id = "") {
   });
   let select = getById(selectId);
 
-  setupSelect(select);
   if (data) {
     data.data.forEach((category) => {
       let option = new Option(category.name, category.id);
@@ -167,8 +176,10 @@ async function loadCategories(selectId, id = "") {
 }
 
 function setupSelect(element) {
+  const parent = element.parentNode;
   $(element).select2({
     theme: "bootstrap4",
+    dropdownParent: parent,
   });
 }
 
