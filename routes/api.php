@@ -79,6 +79,9 @@ return function (App $app) {
     $app->get('/api/sales/detailed/', [$saleApi, 'getDetailedSales']);
     $app->get('/api/sales/{id:[0-9]+}/', [$saleApi, 'getSale']);
     $app->post('/api/sales/', [$saleApi, 'saveSale']);
+    $app->post('/api/sales/{id:[0-9]+}/items/', [$saleApi, 'saveSaleItem']);
     $app->put('/api/sales/{id:[0-9]+}/', [$saleApi, 'saveSale']);
+    $app->put('/api/sales/{id:[0-9]+}/items/{item_id:[0-9]+}/', [$saleApi, 'saveSaleItem']);
     $app->delete('/api/sales/{id:[0-9]+}/', [$saleApi, 'deleteSale']);
+    $app->delete('/api/sales/{id:[0-9]+}/items/{item_id:[0-9]+}/', [$saleApi, 'deleteSaleItem']);
 };
