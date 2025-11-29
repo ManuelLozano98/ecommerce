@@ -169,7 +169,7 @@ class SaleService
             if (!$this->productService->getProduct($rawSaleItem["product_id"])) {
                 throw new NotFoundException("The sale item was not found");
             }
-            $editSale = new SaleItem($saleItem);
+            $editSale = new SaleItem($rawSaleItem);
             if (!SaleItem::edit($editSale)) {
                 throw new UpdateException("Failed to update sale item with ID " . $saleItem->getId());
             }
