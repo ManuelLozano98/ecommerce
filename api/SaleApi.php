@@ -9,7 +9,6 @@ use App\Utils\ApiHelper;
 use App\Utils\PaginationHelper;
 use Rakit\Validation\Validator;
 use Rakit\Validation\ErrorBag;
-use Rakit\Validation\Rules\Lowercase;
 
 class SaleApi
 {
@@ -60,9 +59,34 @@ class SaleApi
             return ApiHelper::success($response, $data);
         }
     }
+    public function saveSaleItem($request, $response, $args)
+    {
+        $body = $request->getBody()->getContents();
+        $data = json_decode($body, true);
+        $method = $request->getMethod();
+        $data['sale_id'] = $args['id'];
+        if ($method === "PUT") {
+            $data['id'] = $args['item_id'];
+        }
+        $isValid = $this->validateSaleItem($data, $method);
+
+        if (is_object($isValid) && $isValid instanceof ErrorBag) {
+            $errors = $isValid->toArray();
+            return ApiHelper::error($response, ['message' => 'Invalid input data', 'details' => $errors], 400);
+        } else {
+            $data = $this->saleService->saveSaleItem($method, $data);
+            return ApiHelper::success($response, $data);
+        }
+    }
     public function deleteSale($request, $response, $args)
     {
         $this->saleService->deleteSale($args['id']);
+        return ApiHelper::success($response, ['message' => 'Sale deleted successfully']);
+    }
+
+    public function deleteSaleItem($request, $response, $args)
+    {
+        $this->saleService->deleteItemById($args['item_id'], $args['id']);
         return ApiHelper::success($response, ['message' => 'Sale deleted successfully']);
     }
 
@@ -78,6 +102,26 @@ class SaleApi
                 return in_array(strtolower($value), SaleStatus::all());
             }],
         ]);
+        $validator->validate();
+        if ($validator->fails()) {
+            return $validator->errors();
+        }
+        return true;
+    }
+    private function validateSaleItem($data, $method)
+    {
+        $rules =  [
+            'product_id' => 'required|integer|min:1',
+            'quantity' => 'required|integer|min:1',
+            'price' => 'required|regex:/^\d+(\.\d{1,2})?$/',
+            'subtotal' => 'required|regex:/^\d+(\.\d{1,2})?$/',
+        ];
+
+        if ($method === "PUT") {
+            $rules['id'] = 'required|integer|min:1';
+            $rules['sale_id'] = 'required|integer|min:1';
+        }
+        $validator = $this->validator->make($data, $rules);
         $validator->validate();
         if ($validator->fails()) {
             return $validator->errors();
