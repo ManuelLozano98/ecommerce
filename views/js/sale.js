@@ -16,6 +16,9 @@ $(document).ready(function () {
   });
   $("#addBtn").on("click", async function (e) {
     e.preventDefault();
+    // Clear form
+    getById("add-sale").reset();
+    $("#add-sale .card").empty();
     const { data: dataUsername, error: errorUsername } = await getUsernames();
     if (dataUsername) {
       loadUsernameData("users", dataUsername);
@@ -49,6 +52,9 @@ $(document).ready(function () {
   loadEditForm();
   setupSelect2();
   setupDateTimePicker();
+  loadProductView();
+  loadProductInfo();
+  loadItemForm();
 });
 
 function loadProductNameData(selectId, data) {
@@ -78,29 +84,54 @@ function setupDateTimePicker() {
 async function insert() {
   const formElement = getById("add-sale");
   const formData = new FormData(formElement);
-  const users = formData.getAll("user_id[]");
+  const users = formData.getAll("user_id[]").map(Number);
   const products = formData.getAll("product_id[]");
-  const formattedDate = moment(formData.get("created_at")).format(
+  const createdAt = moment(formData.get("created_at")).format(
     "YYYY-MM-DD HH:mm:ss"
   );
-  formData.set("created_at", formattedDate);
-  for (let i = 0; i < users.length; i++) {
-    formData.set("user_id", parseInt(users[i]));
-    for (let x = 0; x < products.length && i !== users.length; x++) {
-      formData.set("product_id", parseInt(products[x]));
-      const { data, error } = await apiRequest("api/sales", {
-        method: "POST",
-        body: JSON.stringify(Object.fromEntries(formData.entries())),
-      });
-      if (data) {
-        notifySuccessResponse(API_MSGS.Created);
-        getDatatable("tableSales").ajax.reload(null, false);
-      }
-      if (error) {
-        notifyErrorResponse(error);
+
+  const commonSaleData = {
+    created_at: createdAt,
+    payment_method: formData.get("payment_method"),
+    total_amount: formData.get("total_amount"),
+    status: formData.get("status"),
+  };
+  // Insert sale
+  for (const userId of users) {
+    commonSaleData.user_id = userId;
+    const { data, error } = await apiRequest("api/sales", {
+      method: "POST",
+      body: JSON.stringify(commonSaleData),
+    });
+    if (data) {
+      notifySuccessResponse(API_MSGS.Created);
+    }
+    if (error) {
+      notifyErrorResponse(error);
+    }
+    // Insert sale items
+    for (let i = 0; i < products.length; i++) {
+      const item = {
+        product_id: parseInt(products[i]),
+        quantity: parseInt(formData.getAll("quantity")[i]),
+        subtotal: parseFloat(formData.getAll("subtotal")[i]),
+        price: parseFloat(formData.getAll("price")[i]),
+      };
+      const { data: saleItem, error: itemError } = await apiRequest(
+        `api/sales/${data.data.id}/items`,
+        {
+          method: "POST",
+          body: JSON.stringify(item),
+        }
+      );
+
+      if (itemError) {
+        notifyErrorResponse(itemError);
       }
     }
   }
+
+  getDatatable("tableSales").ajax.reload(null, false);
 }
 
 async function deleteItem(id) {
@@ -121,7 +152,7 @@ async function deleteItem(id) {
   }
 }
 async function deleteProduct(idSale, idProduct) {
-  const response = await getDeleteMsg(msg);
+  const response = await getDeleteMsg();
   if (response.isConfirmed) {
     const { data, error } = await apiRequest(
       `api/sales/${idSale}/items/${idProduct}`,
@@ -156,12 +187,74 @@ async function edit() {
     body: JSON.stringify(obj),
   });
   if (data) {
-    notifySuccessResponse(API_MSGS.Created);
+    notifySuccessResponse(API_MSGS.Updated);
     getDatatable("tableSales").ajax.reload(null, false);
   }
   if (error) {
     notifyErrorResponse(error);
   }
+  await editSaleItems(data.data.id);
+  await addSaleItems(data.data.id);
+}
+
+async function addSaleItems(id) {
+  $(`#edit-tab2`)
+    .find('div[id^="card-"]')
+    .each(async function () {
+      let $card = $(this);
+      let item = {
+        product_id: parseInt(
+          $card.find("select[name='product_id']").val() || 0,
+          10
+        ),
+        quantity: parseInt($card.find("input[name='quantity']").val() || 0, 10),
+        price: parseFloat($card.find("input[name='price']").val() || 0),
+        subtotal: parseFloat($card.find("input[name='subtotal']").val() || 0),
+      };
+      const { data, error } = await apiRequest(`api/sales/${id}/items/`, {
+        method: "POST",
+        body: JSON.stringify(item),
+      });
+      if (data) {
+        notifySuccessResponse(API_MSGS.Created);
+        getDatatable("tableSales").ajax.reload(null, false);
+      }
+      if (error) {
+        notifyErrorResponse(error);
+      }
+    });
+}
+
+async function editSaleItems(saleId) {
+  $(`#edit-tab2 div[id^="product-"]`).each(async function () {
+    let $card = $(this);
+    const divId = $card.attr("id");
+    const idSaleItem = divId.split("-")[1];
+    if (idSaleItem !== "edit") {
+      let item = {
+        quantity: parseInt($card.find("input[name='quantity']").val() || 0, 10),
+        price: parseFloat($card.find("input[name='price']").val() || 0),
+        subtotal: parseFloat($card.find("input[name='subtotal']").val() || 0),
+        product_id: parseInt(
+          $card.find("input[name='original-product']").val() || 0,
+          10
+        ),
+      };
+      const { data, error } = await apiRequest(
+        `api/sales/${saleId}/items/${idSaleItem}`,
+        {
+          method: "PUT",
+          body: JSON.stringify(item),
+        }
+      );
+      if (data) {
+        getDatatable("tableSales").ajax.reload(null, false);
+      }
+      if (error) {
+        notifyErrorResponse(error);
+      }
+    }
+  });
 }
 
 function getSales() {
@@ -248,7 +341,10 @@ function getSales() {
         className: "no-export",
         render: function (data, type, row) {
           let id = Object.values(data)[0];
-          let viewBtn = `<button id="btn-view${id}" type="button" class="btn btn-primary btn-sm rounded-0 view-button" data-toggle="modal" data-target="#modal-view" data-placement="top" title="View info"><i class="fa fa-eye"></i></button>`;
+          let viewBtn = "";
+          if (data.items.length > 0) {
+            viewBtn = `<button id="btn-view${id}" type="button" class="btn btn-primary btn-sm rounded-0 view-button" data-toggle="modal" data-target="#modal-view" data-placement="top" title="View info"><i class="fa fa-eye"></i></button>`;
+          }
           let editBtn = `<button id="btn-edit${id}" class="btn btn-success btn-sm rounded-0 edit-button" type="button" data-toggle="modal" data-target="#modal-edit-default" data-placement="top" title="Edit"><i class="fa fa-edit"></i></button>`;
           let deleteBtn = `<button id="btn-delete_${id}" class="btn btn-danger btn-sm rounded-0" type="button" data-toggle="tooltip" data-placement="top" title="Delete"><i class="fa fa-trash"></i></button>`;
           return viewBtn + editBtn + deleteBtn;
@@ -268,7 +364,6 @@ function loadEditForm() {
     let data = table.row(row).data();
     let paymentMethod = data.payment_method;
     paymentMethod = paymentMethod.toLowerCase().replace(/\s+/g, "_");
-    // $("#edit-tab2").empty();
     $("#edit-tab2")
       .find("div.card.mb-3")
       .each(function () {
@@ -296,7 +391,11 @@ function loadEditForm() {
       loadFormProducts(saleItem, $("#edit-tab2"));
     }
 
-    $(`#edit-tab2 div[id^="product-"]`).each(function () {
+    // Add input type hidden with product id value
+    $(`#edit-tab2 div[id^="product-"]`).each(function (index) {
+      $(this).append(
+        `<input type='hidden' name='original-product' value='${data.items[index].product_id}'>`
+      );
       $(this)
         .find(`div.card-header`)
         .append(
@@ -328,6 +427,23 @@ function loadEditForm() {
       $(this).val(data.items[i].quantity);
       $container.find("input[name='subtotal']").val(data.items[i].subtotal);
     });
+
+    $(`#edit-tab2 input[name='price']`).each(function (i) {
+      $(this).on("change", function () {
+        const $priceInput = $(this);
+        const $row = $priceInput.closest(".row");
+        const price = parseFloat($row.find("input[name='price']").val());
+        const subtotal = price;
+
+        $row.find("input[name='subtotal']").val(subtotal.toFixed(2));
+        calculateTotal(
+          $("#edit-total"),
+          $("#edit-tab2 input[name='subtotal']")
+        );
+      });
+      const $container = $(this).closest(".row");
+      $container.find("input[name='subtotal']").val(data.items[i].subtotal);
+    });
   });
 }
 
@@ -336,7 +452,7 @@ function loadFormProducts(product, dataTarget = $("#tab2")) {
 
   // Card container
   const $card = $(
-    `<div class="card mb-3 bg-light" id="product-${product.id}"></div>`
+    `<div class="card mb-3 bg-light mt-4" id="product-${product.id}"></div>`
   );
   const $cardHeader = $(
     `<div class="card-header" id="header-${product.id}">${product.name}</div>`
@@ -371,11 +487,16 @@ function loadFormProducts(product, dataTarget = $("#tab2")) {
     .append(
       $('<div class="input-group"></div>').append(
         $("<input>", {
-          type: "text",
+          type: "number",
           class: "form-control",
           name: "subtotal",
           id: `subtotal-${product.id}`,
           value: product.price,
+          min: 0,
+          step: "0.01",
+          inputmode: "decimal",
+          pattern: "^d+([.,]d{1,2})?$",
+          readonly: true,
         }),
         $('<span class="input-group-text">€</span>')
       )
@@ -387,11 +508,15 @@ function loadFormProducts(product, dataTarget = $("#tab2")) {
     .append(
       $('<div class="input-group"></div>').append(
         $("<input>", {
-          type: "text",
+          type: "number",
           class: "form-control",
           name: "price",
           id: `price-${product.id}`,
           value: product.price,
+          min: 0,
+          step: "0.01",
+          inputmode: "decimal",
+          pattern: "^d+([.,]d{1,2})?$",
         }),
         $('<span class="input-group-text">€</span>')
       )
@@ -406,7 +531,14 @@ function loadFormProducts(product, dataTarget = $("#tab2")) {
     let subTotal =
       $(`#price-${product.id}`).val() * $(`#quantity-${product.id}`).val();
     $(`#subtotal-${product.id}`).val(subTotal.toFixed(2));
-    calculateTotal($("#total"), $("#add-sale input[name=subtotal]"));
+    calculateTotal($("#total"), $("#add-sale input[name='subtotal']"));
+  });
+
+  $(`#add-sale #price-${product.id}`).on("change", function (e) {
+    let subTotal =
+      $(`#price-${product.id}`).val() * $(`#quantity-${product.id}`).val();
+    $(`#subtotal-${product.id}`).val(subTotal.toFixed(2));
+    calculateTotal($("#total"), $("#add-sale input[name='subtotal']"));
   });
 }
 
@@ -417,6 +549,255 @@ function showFullText() {
     $("#modal-body").append(`<p>${fullText}</p>`);
     $("#viewModalText").modal("show");
   });
+}
+
+function appendSelectItemForm() {
+  let id = crypto.getRandomValues(new Uint32Array(1))[0].toString(36);
+  let cardId = `card-${id}`;
+
+  $("#edit-tab2").append(`
+         <div class="card mb-3 bg-light mt-4" id="${cardId}">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>New Product</span>
+                <button type="button" class="btn-close" aria-label="Close" data-target="#${cardId}">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="card-body">
+                <select name="product_id" class="form-control select-product" id="addProduct-${id}"></select>
+                <div class="product-form-container" id="form-${id}"></div>
+            </div>
+        </div>
+    `);
+
+  $("#edit-tab2").on("click", ".btn-close", function () {
+    const target = $(this).data("target");
+    $(target).remove();
+  });
+  return { id, cardId };
+}
+
+function loadItemForm() {
+  $("#addProductBtn").on("click", async function (e) {
+    e.preventDefault();
+    const { id, cardId } = appendSelectItemForm();
+    let loadForm = false;
+
+    const { data: dataProductsName, error: errorProductsName } =
+      await getProductNames();
+    if (dataProductsName) {
+      loadProductNameData("addProduct-" + id, dataProductsName);
+    }
+    if (errorProductsName) {
+      notifyErrorResponse(errorProductsName);
+    }
+    appendItemForm(loadForm, id, cardId);
+  });
+}
+function appendItemForm(loadForm, id, cardId) {
+  $(`#addProduct-${id}`).on("change", async function () {
+    const selectedId = $(this).val();
+    const { data, error } = await getProduct(selectedId);
+
+    let productCard;
+
+    if (data) {
+      if (!loadForm) {
+        loadFormProducts(data, $("#edit-tab2"));
+        $(`#product-${selectedId}`).attr("id", `product-edit-${id}`);
+        productCard = $(`#product-edit-${id}`);
+
+        productCard
+          .find(`#quantity-${data.data.id}`)
+          .attr("id", `quantity-edit-${id}`);
+        productCard
+          .find(`#subtotal-${data.data.id}`)
+          .attr("id", `subtotal-edit-${id}`);
+        productCard
+          .find(`#price-${data.data.id}`)
+          .attr("id", `price-edit-${id}`);
+      }
+
+      loadForm = true;
+      productCard = $(`#product-edit-${id}`);
+
+      $(`#${cardId}`).append(productCard);
+
+      productCard.find(".card-header").text(data.data.name);
+      $(`#price-edit-${id}`).val(parseFloat(data.data.price));
+      $(`#subtotal-edit-${id}`).val(parseFloat(data.data.price));
+      $(`#quantity-edit-${id}`).val(1);
+
+      $(`#quantity-edit-${id}`).on("change", function () {
+        let subTotal =
+          $(`#price-edit-${id}`).val() * $(`#quantity-edit-${id}`).val();
+        $(`#subtotal-edit-${id}`).val(subTotal.toFixed(2));
+
+        const $total = $("#edit-total");
+        const $allSubtotal = $("#edit-tab2 input[name='subtotal']");
+        calculateTotal($total, $allSubtotal);
+      });
+
+      $(`#price-edit-${id}`).on("change", function () {
+        let subTotal =
+          $(`#price-edit-${id}`).val() * $(`#quantity-edit-${id}`).val();
+        $(`#subtotal-edit-${id}`).val(subTotal.toFixed(2));
+
+        const $total = $("#edit-total");
+        const $allSubtotal = $("#edit-tab2 input[name='subtotal']");
+        calculateTotal($total, $allSubtotal);
+      });
+    }
+
+    if (error) {
+      console.error("Error loading product:", error);
+    }
+  });
+}
+
+function loadProductInfo() {
+  $("#articles").on("select2:select", async function (e) {
+    const { data, error } = await getProduct(e.params.data.id);
+    if (data) {
+      console.log(data);
+      loadFormProducts(data);
+      calculateTotal($("#total"), $("#add-sale input[name='subtotal']"));
+    }
+    if (error) {
+      notifyErrorResponse(error);
+    }
+  });
+
+  $("#articles").on("select2:unselect", function (e) {
+    $(`#product-${e.params.data.id}`).remove();
+    calculateTotal($("#total"), $("#add-sale input[name='subtotal']"));
+  });
+}
+
+function loadProductView(productsPerPage = 1) {
+  $("#tableSales").on("click", ".view-button", function () {
+    let row = $(this).closest("tr");
+    let table = $("#tableSales").DataTable();
+    if (row.hasClass("child")) {
+      row = row.prev(); // needed for responsive tables
+    }
+    let data = table.row(row).data();
+    let items = data.items;
+    let modalBody = getById("modal-body");
+    let currentPage = 1;
+    modalBody.dataset.products = JSON.stringify(items);
+    modalBody.dataset.perPage = productsPerPage;
+    renderProducts(items, currentPage, productsPerPage);
+    renderPagination(items.length, productsPerPage, currentPage);
+    initProductsPagination();
+  });
+}
+function initProductsPagination() {
+  document
+    .getElementById("pagination-container")
+    .addEventListener("click", function (e) {
+      e.preventDefault();
+      let target = e.target;
+
+      if (target.tagName === "A" && target.dataset.page) {
+        let page = parseInt(target.dataset.page);
+        let modalBody = document.getElementById("modal-body");
+        let products = JSON.parse(modalBody.dataset.products);
+        let perPage = parseInt(modalBody.dataset.perPage);
+
+        if (
+          !isNaN(page) &&
+          page >= 1 &&
+          page <= Math.ceil(products.length / perPage)
+        ) {
+          renderProducts(products, page, perPage);
+          renderPagination(products.length, perPage, page);
+        }
+      }
+    });
+}
+
+function renderProducts(products, currentPage, productPerPage) {
+  let modalProduct = getById("modal-body");
+  while (modalProduct.firstChild) {
+    modalProduct.removeChild(modalProduct.firstChild);
+  }
+  let startIndex = (currentPage - 1) * productPerPage;
+  let endIndex = startIndex + productPerPage;
+  let pageProducts = products.slice(startIndex, endIndex);
+
+  pageProducts.forEach((element, index) => {
+    let productRow = document.createElement("div");
+    productRow.classList.add("row");
+
+    let fields = [
+      { label: "Product", value: element.product_name },
+      { label: "Quantity", value: element.quantity },
+      { label: "Price", value: element.price },
+      { label: "Subtotal", value: element.subtotal },
+    ];
+
+    fields.forEach((field) => {
+      let col = document.createElement("div");
+      col.classList.add("col-sm-12");
+
+      let formGroup = document.createElement("div");
+      formGroup.classList.add("form-group");
+
+      let label = document.createElement("label");
+      label.setAttribute("for", `${field.label}-${index}`);
+      label.innerText = field.label;
+
+      let input = document.createElement("input");
+      input.classList.add("form-control");
+      input.setAttribute("type", "text");
+      input.setAttribute("name", `${field.label}-${index}`);
+      input.setAttribute("id", `${field.label}-${index}`);
+      input.setAttribute("readonly", true);
+      input.value = field.value;
+
+      formGroup.appendChild(label);
+      formGroup.appendChild(input);
+      col.appendChild(formGroup);
+      productRow.appendChild(col);
+    });
+
+    modalProduct.appendChild(productRow);
+  });
+}
+
+function renderPagination(totalItems, perPage, currentPage) {
+  let totalPages = Math.ceil(totalItems / perPage);
+  let container = getById("pagination-container");
+  container.innerHTML = "";
+
+  // Prev
+  let prev = document.createElement("li");
+  prev.classList.add("page-item");
+  if (currentPage === 1) prev.classList.add("disabled");
+  prev.innerHTML = `<a class="page-link" href="#" data-page="${
+    currentPage - 1
+  }">Anterior</a>`;
+  container.appendChild(prev);
+  // Pages
+  for (let i = 1; i <= totalPages; i++) {
+    let li = document.createElement("li");
+    li.classList.add("page-item");
+    if (i === currentPage) li.classList.add("active");
+
+    li.innerHTML = `<a class="page-link" href="#" data-page="${i}">${i}</a>`;
+    container.appendChild(li);
+  }
+
+  // Next
+  let next = document.createElement("li");
+  next.classList.add("page-item");
+  if (currentPage === totalPages) next.classList.add("disabled");
+
+  next.innerHTML = `<a class="page-link" href="#" data-page="${
+    currentPage + 1
+  }">Siguiente</a>`;
+  container.appendChild(next);
 }
 
 function setupCounter(inputId, counterId, limit = 255) {
@@ -437,6 +818,11 @@ function loadDeleteButton() {
 function setupSelect2() {
   $(".select2").select2();
 }
+async function getProduct(id) {
+  return await apiRequest(`api/products/${id}`, {
+    method: "GET",
+  });
+}
 
 async function getProductNames() {
   return await apiRequest(`api/products/name`, {
@@ -456,5 +842,6 @@ function calculateTotal($totalElement, $subtotalElements) {
     let result = parseFloat($(this).val());
     $allSubtotalVal += result;
   });
+  $allSubtotalVal = $allSubtotalVal.toFixed(2);
   $totalElement.val($allSubtotalVal);
 }
