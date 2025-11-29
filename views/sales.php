@@ -122,7 +122,7 @@ require_once __DIR__ . '/layout/header.php';
                                             <div class="col-sm-12 form-group">
                                                 <label for="total" class="form-label">Total</label>
                                                 <div class="input-group">
-                                                    <input type="text" inputmode="decimal" pattern="^\d+([.,]\d{1,2})?$"
+                                                    <input type="number" inputmode="decimal" step="0.01" pattern="^\d+([.,]\d{1,2})?$"
                                                         name="total_amount" class="form-control" id="total" />
                                                     <div class="input-group-append">
                                                         <span class="input-group-text">€</span>
@@ -256,7 +256,7 @@ require_once __DIR__ . '/layout/header.php';
                                             <div class="col-sm-12 form-group">
                                                 <label for="edit-total" class="form-label">Total</label>
                                                 <div class="input-group">
-                                                    <input type="text" inputmode="decimal" pattern="^\d+([.,]\d{1,2})?$"
+                                                    <input type="number" inputmode="decimal" step="0.01" pattern="^\d+([.,]\d{1,2})?$"
                                                         name="total_amount" class="form-control" id="edit-total" />
                                                     <!-- <input type="number" min="0" step="1.99" class="form-control" id="total"
                                                 name="total" placeholder="Enter total"> -->
@@ -488,7 +488,6 @@ require_once __DIR__ . '/layout/header.php';
     <script src="<?php echo ADMINLTE ?>plugins/toastr/toastr.min.js"></script>
     <script src="<?php echo ADMINLTE ?>plugins/sweetalert2/sweetalert2.min.js"></script>
     <script src="<?php echo ADMINLTE ?>plugins/bs-custom-file-input/bs-custom-file-input.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.0/dist/JsBarcode.all.min.js"></script>
     <!-- Select2 -->
     <script src="<?php echo ADMINLTE ?>plugins/select2/js/select2.full.min.js"></script>
     <!-- AdminLTE App -->
