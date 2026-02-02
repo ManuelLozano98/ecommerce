@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Utils\DatabaseHelper;
 use JsonSerializable;
 
 class Category implements JsonSerializable
@@ -11,19 +10,20 @@ class Category implements JsonSerializable
     private string $name;
     private string $description;
     private bool $active;
-
-    public function jsonSerialize(): mixed
-    {
-        return $this->toArray();
-    }
-
+    private string $slug;
 
     function __construct($data = [])
     {
         $this->id = $data['id'] ?? 0;
         $this->name = $data['name'] ?? '';
         $this->description = $data['description'] ?? '';
-        $this->active = $data['active'] ?? 1;
+        $this->active = (bool) ($data['active'] ?? true);
+        $this->slug = $data['slug'] ?? $this->generateSlug($this->name);
+    }
+
+    public function jsonSerialize(): mixed
+    {
+        return $this->toArray();
     }
 
     public function toArray()
@@ -33,94 +33,48 @@ class Category implements JsonSerializable
             'name' => $this->name,
             'description' => $this->description,
             'active' => $this->active,
+            'slug' => $this->slug
         ];
     }
 
-    public static function insert(Category $category)
+    private function generateSlug($name)
     {
-        $sql = "INSERT INTO categories (name, description, active) VALUES (?, ?, ?)";
-        $success = DatabaseHelper::preparedQuery(
-            $sql,
-            "ssi",
-            $category->getName(),
-            $category->getDescription(),
-            $category->getActive()
-        );
 
-        if ($success) {
-            $category->setId(DatabaseHelper::getLastId());
-            return $category;
-        }
+        $slug = strtolower($name);
 
-        return false;
+        $slug = preg_replace('/[áàäâã]/u', 'a', $slug);
+        $slug = preg_replace('/[éèëê]/u', 'e', $slug);
+        $slug = preg_replace('/[íìïî]/u', 'i', $slug);
+        $slug = preg_replace('/[óòöôõ]/u', 'o', $slug);
+        $slug = preg_replace('/[úùüû]/u', 'u', $slug);
+        $slug = preg_replace('/[ç]/u', 'c', $slug);
+        $slug = preg_replace('/[ñ]/u', 'n', $slug);
+        $slug = preg_replace('/\s+/', '-', $slug);
+        $slug = preg_replace('/[^a-z0-9-]/', '', $slug);
+
+        $slug = trim($slug, '-');
+
+        return $slug;
     }
 
-    public static function edit(Category $category)
+    /**
+     * Get the value of slug
+     */
+    public function getSlug()
     {
-
-        $sql = "UPDATE categories SET name=?, description=?, active=? WHERE id=?";
-        $success = DatabaseHelper::preparedQuery(
-            $sql,
-            "ssii",
-            $category->getName(),
-            $category->getDescription(),
-            $category->getActive(),
-            $category->getId()
-        );
-        return $success ? $category : false;
-    }
-    public static function delete($id)
-    {
-        $sql = "DELETE FROM categories WHERE id = ?";
-        return DatabaseHelper::preparedQuery($sql, "i", $id);
+        return $this->slug;
     }
 
-    public static function getAll()
+    /**
+     * Set the value of slug
+     *
+     * @return  self
+     */
+    public function setSlug($slug)
     {
-        $sql = "SELECT * FROM categories";
-        $query = DatabaseHelper::query($sql);
-        $categories = [];
-        foreach ($query as $category) {
-            $categories[] = new Category($category);
-        }
-        return $categories;
-    }
+        $this->slug = $slug;
 
-    public static function getIdAndName()
-    {
-        $sql = "SELECT id, name FROM categories";
-        $query = DatabaseHelper::query($sql);
-        $categories = [];
-        foreach ($query as $category) {
-            $categories[] = new Category($category);
-        }
-        return $categories;
-    }
-
-    public static function findById($id)
-    {
-        $sql = "SELECT * FROM categories WHERE id=?";
-        $data = DatabaseHelper::getDatapreparedQuery($sql, "i", $id);
-        return !empty($data) ? new Category($data[0]) : false;
-    }
-
-
-    public static function findByName($name)
-    {
-        $sql = "SELECT * FROM categories WHERE NAME = ?";
-        $data = DatabaseHelper::getDatapreparedQuery($sql, "s", $name);
-        return !empty($data) ? new Category($data[0]) : false;
-    }
-
-    public static function findByActive($active)
-    {
-        $sql = "SELECT * FROM categories WHERE ACTIVE = ?";
-        $query = DatabaseHelper::getDatapreparedQuery($sql, "i", $active);
-        $categories = [];
-        foreach ($query as $category) {
-            $categories[] = new Category($category);
-        }
-        return $categories;
+        return $this;
     }
 
     /**

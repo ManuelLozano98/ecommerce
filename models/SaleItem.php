@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Utils\DatabaseHelper;
 use JsonSerializable;
 
 class SaleItem implements JsonSerializable
@@ -41,74 +40,6 @@ class SaleItem implements JsonSerializable
             'subtotal' => $this->subtotal
         ];
     }
-
-    public static function insert(SaleItem $saleItem)
-    {
-        $sql = "INSERT INTO sale_items (sale_id, product_id, quantity, price, subtotal) VALUES (?, ?, ?,?,?)";
-        $success = DatabaseHelper::preparedQuery(
-            $sql,
-            "iiidd",
-            $saleItem->getSaleId(),
-            $saleItem->getProductId(),
-            $saleItem->getQuantity(),
-            $saleItem->getPrice(),
-            $saleItem->getSubtotal()
-        );
-
-        if ($success) {
-            $saleItem->setId(DatabaseHelper::getLastId());
-            return $saleItem;
-        }
-
-        return false;
-    }
-
-    public static function edit(SaleItem $saleItem)
-    {
-
-        $sql = "UPDATE sale_items SET sale_id=?, product_id=?, quantity=?, price=?, subtotal=? WHERE id=?";
-        $success = DatabaseHelper::preparedQuery(
-            $sql,
-            "iiiddi",
-            $saleItem->getSaleId(),
-            $saleItem->getProductId(),
-            $saleItem->getQuantity(),
-            $saleItem->getPrice(),
-            $saleItem->getSubtotal(),
-            $saleItem->getId()
-        );
-        return $success ? $saleItem : false;
-    }
-    public static function delete($id)
-    {
-        $sql = "DELETE FROM sale_items WHERE id = ?";
-        return DatabaseHelper::preparedQuery($sql, "i", $id);
-    }
-
-    public static function deleteBySaleId($idSale, $id)
-    {
-        $sql = "DELETE FROM sale_items WHERE id=? AND sale_id=?";
-        return DatabaseHelper::preparedQuery($sql, "ii", $id, $idSale);
-    }
-    public static function getAll()
-    {
-        $sql = "SELECT * FROM sale_items";
-        $query = DatabaseHelper::query($sql);
-        $sale_items = [];
-        foreach ($query as $saleItem) {
-            $sale_items[] = new SaleItem($saleItem);
-        }
-        return $sale_items;
-    }
-
-    public static function findById($id)
-    {
-        $sql = "SELECT * FROM sale_items WHERE id=?";
-        $data = DatabaseHelper::getDataPreparedQuery($sql, "i", $id);
-        return !empty($data) ? new SaleItem($data[0]) : false;
-    }
-
-
 
     public function getId()
     {
