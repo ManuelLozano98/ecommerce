@@ -190,6 +190,11 @@ require_once __DIR__ . '/layout/header.php';
                                         </small>
                                     </div>
                                     <div class="form-group">
+                                        <label for="edit-slug">Slug</label>
+                                        <input type="text" class="form-control" name="slug" id="edit-slug"
+                                            placeholder="Enter a URL for the product" required>
+                                    </div>
+                                    <div class="form-group">
                                         <label for="edit-price">Price</label>
                                         <div class="input-group">
                                             <input type="number" min="0" step="0.01" class="form-control"
@@ -316,6 +321,7 @@ require_once __DIR__ . '/layout/header.php';
                                                             <th>Price</th>
                                                             <th>Category</th>
                                                             <th>Date</th>
+                                                            <th>Slug</th>
                                                             <th>Active</th>
                                                             <th>Actions</th>
                                                         </thead>

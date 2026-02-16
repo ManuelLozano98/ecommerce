@@ -125,7 +125,7 @@ function getProducts() {
           if (data !== "") {
             result = `<img alt="${data.substring(
               0,
-              data.indexOf(".")
+              data.indexOf("."),
             )}" src="uploads/images/${data}" width="100px" height="100px" object-fit:cover;/>`;
           }
           return result;
@@ -142,6 +142,7 @@ function getProducts() {
         },
       },
       { data: "created_at" },
+      { data: "slug" },
       {
         data: "active",
         render: function (data, type, row) {
@@ -198,25 +199,26 @@ async function insert() {
     if (imageFile) {
       const imageForm = new FormData();
       imageForm.append("image", imageFile);
-      const { dataImage, errorImage } = await fetch(
-        `api/products/${data.data.id}/image`,
-        {
-          method: "POST",
-          body: imageForm,
-        }
-      );
-      if (dataImage) {
-        notifySuccessResponse(API_MSGS.Created);
-        getDatatable("tableProducts").ajax.reload(null, false);
-        return;
+      const response = await fetch(`api/products/${data.data.id}/image`, {
+        method: "POST",
+        body: imageForm,
+      });
+
+      let result = null;
+
+      try {
+        result = await response.json();
+      } catch (e) {
+        result = null;
       }
-      if (errorImage) {
-        notifyErrorResponse(errorImage);
-        return;
+
+      if (!response.ok) {
+        notifyErrorResponse(result || { message: "Error uploading image" });
       }
     }
     notifySuccessResponse(API_MSGS.Created);
     getDatatable("tableProducts").ajax.reload(null, false);
+    return;
   }
   if (error) {
     notifyErrorResponse(error);
@@ -249,6 +251,7 @@ function loadEditForm() {
     $("#edit-price").val(data.price.substring(0, data.price.length - 1)); // Remove the € symbol
     $("#edit-stock").val(data.stock);
     $("#edit-code").val(data.code);
+    $("#edit-slug").val(data.slug);
     generateBarCode("#edit-barcode", data.code);
     loadCategories("edit-categorySelect", data.category_id);
     if (data.image !== "") {
@@ -289,25 +292,26 @@ async function edit() {
     if (imageFile) {
       const imageForm = new FormData();
       imageForm.append("image", imageFile);
-      const { dataImage, errorImage } = await fetch(
-        `api/products/${data.data.id}/image`,
-        {
-          method: "POST",
-          body: imageForm,
-        }
-      );
-      if (dataImage) {
-        notifySuccessResponse(API_MSGS.Updated);
-        getDatatable("tableProducts").ajax.reload(null, false);
-        return;
+      const response = await fetch(`api/products/${data.data.id}/image`, {
+        method: "POST",
+        body: imageForm,
+      });
+
+      let result = null;
+
+      try {
+        result = await response.json();
+      } catch (e) {
+        result = null;
       }
-      if (errorImage) {
-        notifyErrorResponse(errorImage);
-        return;
+
+      if (!response.ok) {
+        notifyErrorResponse(result || { message: "Error uploading image" });
       }
     }
     notifySuccessResponse(API_MSGS.Updated);
     getDatatable("tableProducts").ajax.reload(null, false);
+    return;
   }
   if (error) {
     notifyErrorResponse(error);
@@ -385,6 +389,6 @@ function validateUserProductCode(codeId, barcodeId) {
     "input",
     debounce(function () {
       validateCode(barcodeId, this.value, codeId);
-    }, 500)
+    }, 500),
   );
 }
