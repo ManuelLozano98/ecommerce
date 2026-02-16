@@ -3,58 +3,39 @@
 namespace App\Api;
 
 use App\Services\ReviewService;
-use App\Services\ProductService;
-use App\Services\UserService;
-use App\Models\Review;
 use App\Utils\ApiHelper;
 use Rakit\Validation\Validator;
 use Rakit\Validation\ErrorBag;
-use App\Utils\PaginationHelper;
 
 class ReviewApi
 {
     private ReviewService $reviewService;
-    private UserService $userServcice;
-    private ProductService $productService;
     private Validator $validator;
 
-    public function __construct()
+    public function __construct(ReviewService $reviewService, Validator $validator)
     {
-        $this->reviewService = new ReviewService();
-        $this->userServcice = new UserService();
-        $this->productService = new ProductService();
-        $this->validator = new Validator();
+        $this->reviewService = $reviewService;
+        $this->validator = $validator;
     }
 
 
-    public function getReviews($request, $response, $args)
+    public function getAll($request, $response, $args)
     {
         $params = $request->getQueryParams();
         if (isset($params["start"]) && isset($params["length"])) { // If start and length are present as query params pagination is applied 
-            $tableName = "reviews";
-            $search = $params['search']['value'] ?? '';
-            $columns = ['id', 'name', 'description', 'active'];
-            $data = PaginationHelper::make($params, $tableName, $columns);
-
-
-            $filteredRecords = PaginationHelper::getFilteredCount($search, $tableName, $columns);
-            $totalRecords = PaginationHelper::getTotalRecords($tableName);
-
+            $paginatedData = $this->reviewService->paginate($params);
             $payload = [ // DataTables expects a response object with the following structure
                 'draw' => (int)($params['draw'] ?? 1),
-                'recordsTotal' => $totalRecords,
-                'recordsFiltered' => $filteredRecords,
-                'data' => $data
+                'recordsTotal' => $paginatedData['recordsTotal'],
+                'recordsFiltered' => $paginatedData['recordsFiltered'],
+                'data' => $paginatedData['data']
             ];
 
             $response->getBody()->write(json_encode($payload));
             return $response->withStatus(200)->withHeader('Content-Type', 'application/json');
         }
 
-        $reviews = $this->reviewService->getReviews();
-        if (!$reviews) {
-            return ApiHelper::error($response, ['message' => 'No reviews found'], 404);
-        }
+        $reviews = $this->reviewService->getAll();
         return ApiHelper::success($response, $reviews);
     }
 
@@ -62,54 +43,19 @@ class ReviewApi
     {
         $params = $request->getQueryParams();
         if (isset($params["start"]) && isset($params["length"])) { // If start and length are present as query params pagination is applied 
-            $selectFields = [
-                'r.id',
-                'r.user_id',
-                'r.product_id',
-                'r.rating',
-                'r.title',
-                'r.comment',
-                'r.created_at',
-                'r.updated_at',
-                'r.active',
-                'u.username AS username',
-                'p.name AS product_name'
-            ];
-
-            $columns = [
-                'r.id',
-                'u.username',
-                'p.name',
-                'r.rating',
-                'r.title',
-                'r.comment',
-                'r.created_at',
-                'r.updated_at',
-                'r.active',
-                'r.user_id',
-                'r.product_id',
-            ];
-
-            $fromClause = 'reviews r JOIN users u ON r.user_id = u.id JOIN products p ON r.product_id = p.id';
-            $search = $params['search']['value'] ?? '';
-
-            $data = PaginationHelper::makeCustom($params, $fromClause, $columns, $selectFields);
-            $totalRecords = PaginationHelper::getTotalRecordsCustom($fromClause);
-            $filteredRecords = PaginationHelper::getFilteredCustomCount($search, $fromClause, $columns);
-
-
-            $payload = [
+            $paginatedData = $this->reviewService->paginateDetailed($params);
+            $payload = [ // DataTables expects a response object with the following structure
                 'draw' => (int)($params['draw'] ?? 1),
-                'recordsTotal' => $totalRecords,
-                'recordsFiltered' => $filteredRecords,
-                'data' => $data
+                'recordsTotal' => $paginatedData['recordsTotal'],
+                'recordsFiltered' => $paginatedData['recordsFiltered'],
+                'data' => $paginatedData['data']
             ];
 
             $response->getBody()->write(json_encode($payload));
             return $response->withStatus(200)->withHeader('Content-Type', 'application/json');
         }
 
-        $reviews = $this->reviewService->getReviews();
+        $reviews = $this->reviewService->getAll();
         return ApiHelper::success($response, $reviews);
     }
 
@@ -131,33 +77,34 @@ class ReviewApi
         return ApiHelper::success($response, $reviews);
     }
 
-    public function saveReview($request, $response, $args)
+    public function save($request, $response, $args)
     {
         $body = $request->getBody()->getContents();
         $data = json_decode($body, true);
         if (!$data) {
             return ApiHelper::error($response, ['message' => 'Invalid JSON input'], 400);
         }
-        if (isset($args['id'])) {
-            $data['id'] = $args['id'];
-            $method = "PUT";
-        } else {
-            $method = "POST";
-        }
 
-        $isValid = $this->validateReview($data);
+        $isValid = $this->validate($data);
         if (is_object($isValid) && $isValid instanceof ErrorBag) {
             $errors = $isValid->toArray();
             return ApiHelper::error($response, ['message' => 'Invalid input data', 'details' => $errors], 400);
-        } else {
-            $data = $this->reviewService->saveReview($method, $data, $this->userServcice, $this->productService);
-            return ApiHelper::success($response, $data);
+        }
+        if ($request->getMethod() === "POST") {
+            return ApiHelper::success($response, $this->reviewService->save($data));
+        }
+        if ($request->getMethod() === "PUT") {
+            $data['id'] = $args['id'];
+            return ApiHelper::success(
+                $response,
+                $this->reviewService->update($data)
+            );
         }
     }
 
-    public function deleteReview($request, $response, $args)
+    public function delete($request, $response, $args)
     {
-        $this->reviewService->deleteReview($args['id']);
+        $this->reviewService->delete($args['id']);
         return ApiHelper::success($response, ['message' => 'Review deleted successfully']);
     }
 
@@ -165,7 +112,7 @@ class ReviewApi
     {
         $reviews = $this->reviewService->getReviewsByUser($args['id']);
         foreach ($reviews as $review) {
-            $this->reviewService->deleteReview($review->getId());
+            $this->reviewService->delete($review->getId());
         }
         return ApiHelper::success($response, ['message' => 'All reviews deleted successfully']);
     }
@@ -174,13 +121,13 @@ class ReviewApi
     {
         $reviewId = (int) $args['review_id'];
         $review = $this->reviewService->getUserReview($args['user_id'], $reviewId);
-        return $this->deleteReview($request, $response, ['id' => $review->getId()]);
+        return $this->delete($request, $response, ['id' => $review->getId()]);
     }
     public function deleteReviewsbyProduct($request, $response, $args)
     {
         $reviews = $this->reviewService->getReviewsByProduct($args['id']);
         foreach ($reviews as $review) {
-            $this->reviewService->deleteReview($review->getId());
+            $this->reviewService->delete($review->getId());
         }
         return ApiHelper::success($response, ['message' => 'All reviews deleted successfully']);
     }
@@ -189,10 +136,10 @@ class ReviewApi
     {
         $reviewId = (int) $args['review_id'];
         $review = $this->reviewService->getProductReview($args['product_id'], $reviewId);
-        return $this->deleteReview($request, $response, ['id' => $review->getId()]);
+        return $this->delete($request, $response, ['id' => $review->getId()]);
     }
 
-    private function validateReview($data)
+    private function validate($data)
     {
         $validator = $this->validator->make($data, [
             'active' => 'nullable|boolean',
