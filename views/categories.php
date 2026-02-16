@@ -62,6 +62,13 @@ require_once __DIR__ . "/layout/header.php";
                                             <span id="counter">0/255</span>
                                         </div>
                                     </div>
+                                    <div class="col-sm-12">
+                                        <div class="form-group">
+                                            <label for="slug">Slug</label>
+                                            <input type="text" class="form-control" name="slug" id="slug"
+                                                placeholder="Enter a URL for the category" required>
+                                        </div>
+                                    </div>
 
 
                                 </div>
@@ -106,6 +113,13 @@ require_once __DIR__ . "/layout/header.php";
                                         <textarea name="description" id="edit-description" class="form-control" rows="4" maxlength="255" placeholder="Write here..." value=""></textarea>
                                         <div class="text-end text-muted mt-1">
                                             <span id="edit-counter">0/255</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-12">
+                                        <div class="form-group">
+                                            <label for="edit-slug">Slug</label>
+                                            <input type="text" class="form-control" name="slug" id="edit-slug"
+                                                placeholder="Enter a URL for the category" value="" required>
                                         </div>
                                     </div>
                                     <div class="custom-control custom-switch">
@@ -185,6 +199,7 @@ require_once __DIR__ . "/layout/header.php";
                                                                 <th>Id</th>
                                                                 <th>Name</th>
                                                                 <th>Description</th>
+                                                                <th>Slug</th>
                                                                 <th>Active</th>
                                                                 <th>Actions</th>
                                                             </thead>
