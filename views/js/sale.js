@@ -35,16 +35,6 @@ $(document).ready(function () {
       notifyErrorResponse(errorProductsName);
     }
   });
-  $(document).on("click", "[id^='btn-edit']", async function (e) {
-    e.preventDefault();
-    const { data: dataUsername, error: errorUsername } = await getUsernames();
-    if (dataUsername) {
-      loadUsernameData("edit-users", dataUsername);
-    }
-    if (errorUsername) {
-      notifyErrorResponse(errorUsername);
-    }
-  });
 
   getSales();
   showFullText();
@@ -87,7 +77,7 @@ async function insert() {
   const users = formData.getAll("user_id[]").map(Number);
   const products = formData.getAll("product_id[]");
   const createdAt = moment(formData.get("created_at")).format(
-    "YYYY-MM-DD HH:mm:ss"
+    "YYYY-MM-DD HH:mm:ss",
   );
 
   const commonSaleData = {
@@ -122,7 +112,7 @@ async function insert() {
         {
           method: "POST",
           body: JSON.stringify(item),
-        }
+        },
       );
 
       if (itemError) {
@@ -158,7 +148,7 @@ async function deleteProduct(idSale, idProduct) {
       `api/sales/${idSale}/items/${idProduct}`,
       {
         method: "DELETE",
-      }
+      },
     );
     if (data) {
       notifySuccessResponse(API_MSGS.Deleted);
@@ -177,7 +167,7 @@ async function edit() {
   console.log(form.get("created_at"));
   const formattedDate = moment(
     form.get("created_at"),
-    "MM/DD/YYYY h:mm A"
+    "MM/DD/YYYY h:mm A",
   ).format("YYYY-MM-DD HH:mm:ss");
   console.log(formattedDate);
   form.set("created_at", formattedDate);
@@ -205,7 +195,7 @@ async function addSaleItems(id) {
       let item = {
         product_id: parseInt(
           $card.find("select[name='product_id']").val() || 0,
-          10
+          10,
         ),
         quantity: parseInt($card.find("input[name='quantity']").val() || 0, 10),
         price: parseFloat($card.find("input[name='price']").val() || 0),
@@ -237,7 +227,7 @@ async function editSaleItems(saleId) {
         subtotal: parseFloat($card.find("input[name='subtotal']").val() || 0),
         product_id: parseInt(
           $card.find("input[name='original-product']").val() || 0,
-          10
+          10,
         ),
       };
       const { data, error } = await apiRequest(
@@ -245,7 +235,7 @@ async function editSaleItems(saleId) {
         {
           method: "PUT",
           body: JSON.stringify(item),
-        }
+        },
       );
       if (data) {
         getDatatable("tableSales").ajax.reload(null, false);
@@ -273,7 +263,7 @@ function getSales() {
       }, DEBOUNCE_DELAY);
 
       $.ajax({
-        url: "api/sales/detailed",
+        url: "api/sales/detailed/username/",
         method: "GET",
         data: data,
         success: function (response) {
@@ -317,32 +307,32 @@ function getSales() {
     buttons: getButtonsDataTable(),
     dom: getDomStyleDataTable(),
     columns: [
-      { data: "id" },
+      { data: "sales.id" },
       {
         data: "username",
         render: function (data, type, row) {
-          return `<span id="username-${row.user_id}" data-user_id="${row.user_id}">${data}</span>`;
+          return `<span id="username-${row.sales.user_id}" data-user_id="${row.sales.user_id}">${data}</span>`;
         },
       },
-      { data: "created_at" },
-      { data: "payment_method" },
-      { data: "status" },
+      { data: "sales.created_at" },
+      { data: "sales.payment_method" },
+      { data: "sales.status" },
       {
-        data: "total_amount",
+        data: "sales.total_amount",
         render: function (data) {
           return data + "€";
         },
       },
       {
         data: null,
-        title: "Actions",
         orderable: false,
         searchable: false,
         className: "no-export",
-        render: function (data, type, row) {
-          let id = Object.values(data)[0];
+        render: function (data) {
+          const id = data.sales.id;
+
           let viewBtn = "";
-          if (data.items.length > 0) {
+          if (data.sales.items.length > 0) {
             viewBtn = `<button id="btn-view${id}" type="button" class="btn btn-primary btn-sm rounded-0 view-button" data-toggle="modal" data-target="#modal-view" data-placement="top" title="View info"><i class="fa fa-eye"></i></button>`;
           }
           let editBtn = `<button id="btn-edit${id}" class="btn btn-success btn-sm rounded-0 edit-button" type="button" data-toggle="modal" data-target="#modal-edit-default" data-placement="top" title="Edit"><i class="fa fa-edit"></i></button>`;
@@ -354,7 +344,14 @@ function getSales() {
   });
 }
 
-function loadEditForm() {
+async function loadEditForm() {
+  const { data: dataUsername, error: errorUsername } = await getUsernames();
+  if (dataUsername) {
+    loadUsernameData("edit-users", dataUsername);
+  }
+  if (errorUsername) {
+    notifyErrorResponse(errorUsername);
+  }
   $("#tableSales").on("click", ".edit-button", function () {
     let row = $(this).closest("tr");
     let table = $("#tableSales").DataTable();
@@ -362,30 +359,30 @@ function loadEditForm() {
       row = row.prev(); // needed for responsive tables
     }
     let data = table.row(row).data();
-    let paymentMethod = data.payment_method;
+    let paymentMethod = data.sales.payment_method;
     paymentMethod = paymentMethod.toLowerCase().replace(/\s+/g, "_");
     $("#edit-tab2")
       .find("div.card.mb-3")
       .each(function () {
         $(this).remove();
       });
-    $("#edit-idsale").val(data.id);
-    $("#edit-users").val(data.user_id);
+    $("#edit-idsale").val(data.sales.id);
+    $("#edit-users").val(data.sales.user_id);
     $("#edit-payment_method").val(paymentMethod);
-    $("#edit-status").val(data.status.toLowerCase());
-    $("#edit-total").val(data.total_amount);
+    $("#edit-status").val(data.sales.status.toLowerCase());
+    $("#edit-total").val(data.sales.total_amount);
     $("#edit-datetime").datetimepicker(
       "date",
-      moment(data.created_at, "YYYY-MM-DD HH:mm:ss")
+      moment(data.sales.created_at, "YYYY-MM-DD HH:mm:ss"),
     );
-    for (let i = 0; i < data.items.length; i++) {
+    for (let i = 0; i < data.sales.items.length; i++) {
       let saleItem = {
         data: {
-          id: data.items[i].id,
-          price: data.items[i].price,
-          name: data.items[i].product_name,
-          subtotal: data.items[i].subtotal,
-          quantity: data.items[i].quantity,
+          id: data.sales.items[i].id,
+          price: data.sales.items[i].price,
+          name: data.sales.items[i].product_name,
+          subtotal: data.sales.items[i].subtotal,
+          quantity: data.sales.items[i].quantity,
         },
       };
       loadFormProducts(saleItem, $("#edit-tab2"));
@@ -394,18 +391,18 @@ function loadEditForm() {
     // Add input type hidden with product id value
     $(`#edit-tab2 div[id^="product-"]`).each(function (index) {
       $(this).append(
-        `<input type='hidden' name='original-product' value='${data.items[index].product_id}'>`
+        `<input type='hidden' name='original-product' value='${data.sales.items[index].product_id}'>`,
       );
       $(this)
         .find(`div.card-header`)
         .append(
           `<button id="btn-delete-${$(this).attr(
-            "id"
-          )}" class="btn btn-danger btn-sm rounded-0" type="button" data-toggle="tooltip" data-placement="top" title="Delete" style="display: flex; float: right;"><i class="fa fa-trash"></i></button>`
+            "id",
+          )}" class="btn btn-danger btn-sm rounded-0" type="button" data-toggle="tooltip" data-placement="top" title="Delete" style="display: flex; float: right;"><i class="fa fa-trash"></i></button>`,
         );
       $(`#btn-delete-${$(this).attr("id")}`).on("click", function () {
         let productId = $(this).attr("id").split("-")[3];
-        deleteProduct(data.id, productId);
+        deleteProduct(data.sales.id, productId);
       });
     });
 
@@ -420,12 +417,14 @@ function loadEditForm() {
         $row.find("input[name='subtotal']").val(subtotal.toFixed(2));
         calculateTotal(
           $("#edit-total"),
-          $("#edit-tab2 input[name='subtotal']")
+          $("#edit-tab2 input[name='subtotal']"),
         );
       });
       const $container = $(this).closest(".row");
-      $(this).val(data.items[i].quantity);
-      $container.find("input[name='subtotal']").val(data.items[i].subtotal);
+      $(this).val(data.sales.items[i].quantity);
+      $container
+        .find("input[name='subtotal']")
+        .val(data.sales.items[i].subtotal);
     });
 
     $(`#edit-tab2 input[name='price']`).each(function (i) {
@@ -438,11 +437,13 @@ function loadEditForm() {
         $row.find("input[name='subtotal']").val(subtotal.toFixed(2));
         calculateTotal(
           $("#edit-total"),
-          $("#edit-tab2 input[name='subtotal']")
+          $("#edit-tab2 input[name='subtotal']"),
         );
       });
       const $container = $(this).closest(".row");
-      $container.find("input[name='subtotal']").val(data.items[i].subtotal);
+      $container
+        .find("input[name='subtotal']")
+        .val(data.sales.items[i].subtotal);
     });
   });
 }
@@ -452,10 +453,10 @@ function loadFormProducts(product, dataTarget = $("#tab2")) {
 
   // Card container
   const $card = $(
-    `<div class="card mb-3 bg-light mt-4" id="product-${product.id}"></div>`
+    `<div class="card mb-3 bg-light mt-4" id="product-${product.id}"></div>`,
   );
   const $cardHeader = $(
-    `<div class="card-header" id="header-${product.id}">${product.name}</div>`
+    `<div class="card-header" id="header-${product.id}">${product.name}</div>`,
   );
   const $cardBody = $('<div class="card-body"></div>');
   const $row = $('<div class="row"></div>');
@@ -463,7 +464,7 @@ function loadFormProducts(product, dataTarget = $("#tab2")) {
   // Quantity
   const $quantityCol = $('<div class="col-sm-4"></div>')
     .append(
-      `<label for="quantity-${product.id}" class="form-label">Quantity</label>`
+      `<label for="quantity-${product.id}" class="form-label">Quantity</label>`,
     )
     .append(
       $('<div class="input-group"></div>').append(
@@ -475,14 +476,14 @@ function loadFormProducts(product, dataTarget = $("#tab2")) {
           name: "quantity",
           id: `quantity-${product.id}`,
           value: 1,
-        })
-      )
+        }),
+      ),
     );
 
   // Subtotal
   const $subtotalCol = $('<div class="col-sm-4"></div>')
     .append(
-      `<label for="subtotal-${product.id}" class="form-label">Subtotal</label>`
+      `<label for="subtotal-${product.id}" class="form-label">Subtotal</label>`,
     )
     .append(
       $('<div class="input-group"></div>').append(
@@ -498,8 +499,8 @@ function loadFormProducts(product, dataTarget = $("#tab2")) {
           pattern: "^d+([.,]d{1,2})?$",
           readonly: true,
         }),
-        $('<span class="input-group-text">€</span>')
-      )
+        $('<span class="input-group-text">€</span>'),
+      ),
     );
 
   // Price
@@ -518,8 +519,8 @@ function loadFormProducts(product, dataTarget = $("#tab2")) {
           inputmode: "decimal",
           pattern: "^d+([.,]d{1,2})?$",
         }),
-        $('<span class="input-group-text">€</span>')
-      )
+        $('<span class="input-group-text">€</span>'),
+      ),
     );
 
   $row.append($quantityCol, $subtotalCol, $priceCol);
@@ -682,7 +683,7 @@ function loadProductView(productsPerPage = 1) {
       row = row.prev(); // needed for responsive tables
     }
     let data = table.row(row).data();
-    let items = data.items;
+    let items = data.sales.items;
     let modalBody = getById("modal-body");
     let currentPage = 1;
     modalBody.dataset.products = JSON.stringify(items);
