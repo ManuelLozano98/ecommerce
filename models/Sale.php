@@ -17,6 +17,7 @@ class Sale implements JsonSerializable
     private string $updated_at;
     private PaymentMethods $payment_method;
     private SaleStatus $status;
+    private array $items = [];
 
     public function jsonSerialize(): mixed
     {
@@ -48,7 +49,8 @@ class Sale implements JsonSerializable
             'payment_method' => $this->getPaymentMethod(),
             'status' => $this->getStatus(),
             'total_amount' => $this->total_amount,
-            'updated_at' => $this->updated_at
+            'updated_at' => $this->updated_at,
+            'items' => $this->items
         ];
     }
 
@@ -108,5 +110,14 @@ class Sale implements JsonSerializable
     public function setUpdatedAt($datetime)
     {
         $this->updated_at = $datetime;
+    }
+    public function setItems(array $items): void
+    {
+        $this->items = $items;
+    }
+
+    public function getItems(): array
+    {
+        return $this->items;
     }
 }
