@@ -2,208 +2,148 @@
 
 namespace App\Services;
 
-use App\Services\UserService;
-use App\Services\ProductService;
+use App\Dtos\SaleDetailedUsernameDTO;
+use App\Dtos\SaleDetailedDTO;
 use App\Models\Sale;
-use App\Models\SaleItem;
 use App\Models\User;
 use App\Exceptions\NotFoundException;
 use App\Exceptions\UpdateException;
 use App\Exceptions\InsertException;
 use App\Exceptions\DeleteException;
-
+use App\Repositories\Contracts\ProductRepositoryInterface;
+use App\Repositories\Contracts\SaleItemRepositoryInterface;
+use App\Repositories\Contracts\SaleRepositoryInterface;
+use App\Repositories\Contracts\UserRepositoryInterface;
 
 class SaleService
 {
-    private UserService $userService;
-    private ProductService $productService;
+    private SaleRepositoryInterface $repository;
+    private UserRepositoryInterface $userRepository;
+    private ProductRepositoryInterface $productRepository;
+    private SaleItemRepositoryInterface $saleItemRepository;
 
-    public function __construct()
+    public function __construct(SaleRepositoryInterface $repository, UserRepositoryInterface $userRepository, ProductRepositoryInterface $productRepository, SaleItemRepositoryInterface $saleItemRepository)
     {
-        $this->userService = new UserService();
-        $this->productService = new ProductService();
+        $this->repository = $repository;
+        $this->userRepository = $userRepository;
+        $this->productRepository = $productRepository;
+        $this->saleItemRepository = $saleItemRepository;
     }
     public function getSales()
     {
-        return Sale::getAll();
+        return $this->repository->findAll();
     }
-    public function getSalesDetailedJSON()
+
+    public function getSalesDetailed()
     {
-        $sales = Sale::getAll();
-        $salesDetailed = [];
+        return $this->repository->findAllDetailed();
+    }
 
+    public function getSalesWithUserAndItems()
+    {
+
+        $sales = $this->repository->findAll();
+        $result = [];
         foreach ($sales as $sale) {
-            $saleData = $sale->toArray();
-            $saleData["username"] = $this->userService->getUser($sale->getUserId())->getUsername();
-            $items = $sale->getItems();
-            $saleData["items"] = array_map(function ($item) {
-                $itemData = $item->toArray();
-                $itemData["product_name"] = $this->productService->getProduct($item->getProductId())->getName();
-                return $itemData;
-            }, $items);
+            $user = $this->userRepository->findById($sale->getUserId());
+            $items = $this->saleItemRepository->findBySale($sale);
+            $itemsData = [];
+            foreach ($items as $item) {
+                $itemArray = $item->toArray();
+                $productName = $this->productRepository->findById($item->getProductId())->getName();
+                $itemArray['product_name'] = $productName;
+                $itemsData[] = $itemArray;
+            }
 
-            $salesDetailed[] = $saleData;
+            $result[] = new SaleDetailedUsernameDTO(
+                $sale->toArray(),
+                $user->getUsername(),
+                $itemsData
+            );
         }
-        if (count($salesDetailed) > 0) {
-            $json = json_encode(["data" => array_values($salesDetailed)], true);
-            return $json;
-        }
-        return json_encode(["data" => array_values($sales)], true);
+        return $result;
     }
     public function getSale($id)
     {
-        $sale = Sale::findById($id);
+        $sale = $this->repository->findById($id);
         if (!$sale) {
             throw new NotFoundException("The sale was not found or not exists");
         }
         return $sale;
     }
-    public function getSalesAndItemsJSON()
+    public function getDetailedSale($id)
     {
-        $sales = Sale::getAll();
-        $salesAndItems = [];
-
-        foreach ($sales as $sale) {
-            $saleData = $sale->toArray();
-            $items = $sale->getItems();
-            $saleData["items"] = array_map(function ($item) {
-                return $item->toArray();
-            }, $items);
-
-            $salesAndItems[] = $saleData;
+        $sale = $this->repository->findDetailedById($id);
+        if (!$sale) {
+            throw new NotFoundException("The sale was not found or not exists");
         }
-        if (count($salesAndItems) > 0) {
-            $json = json_encode($salesAndItems, true);
-            return $json;
-        }
-        return json_encode(["data" => array_values($sales)], true);
+        return $sale;
     }
 
     public function getSalesByUser(User $user)
     {
-        $userId = $user->getId();
-        return Sale::findByUserId($userId);
+        return $this->repository->findByUserId($user->getId());
     }
     public function getSalesByUserId(int $userId)
     {
-        return Sale::findByUserId($userId);
+        return $this->repository->findByUserId($userId);
     }
 
     public function getSalesByProduct($id)
     {
-        return Sale::getSalesByProductId($id);
+        return $this->repository->findByProductId($id);
     }
 
-    public function getPurchasesByUserJSON($userId)
+    public function getPurchasesByUser($userId)
     {
-        $sales = Sale::findByUserId($userId);
-        $userSales = [];
+        $sales = $this->repository->findByUserId($userId);
+        $result = [];
 
         foreach ($sales as $sale) {
-            $saleArray = $sale->toArray();
-            $items = $sale->getItems();
-
-            $saleArray['items'] = array_map(function ($item) {
-                return $item->toArray();
-            }, $items);
-
-            $userSales[] = $saleArray;
+            $items = $this->saleItemRepository->findBySale($sale);
+            $result[] = new SaleDetailedDTO(
+                $sale->toArray(),
+                $items
+            );
         }
-        if (count($userSales) > 0) {
-            $json = json_encode(["data" => array_values($userSales)], true);
-            return $json;
-        }
-        return json_encode(["data" => array_values($sales)], true);
+        return $result;
     }
 
-    public function saveSale($method, $rawSale)
+    public function save($rawSale)
     {
-
-        if ($method === "POST") {
-            if (!$this->userService->getUser($rawSale["user_id"])) {
-                throw new NotFoundException("The sale was not found or not exists");
-            }
-
-            $sale = new Sale($rawSale);
-            if (!Sale::insert($sale)) {
-                throw new InsertException("Failed to insert sale");
-            }
-            return $sale;
-        } else {
-            $saleDb = Sale::findById($rawSale["id"]);
-            if (!$saleDb) {
-                throw new NotFoundException("The sale was not found");
-            }
-            $editSale = new Sale($rawSale);
-            if (!Sale::edit($editSale)) {
-                throw new UpdateException("Failed to update sale with ID " . $editSale->getId());
-            }
-            return $editSale;
+        if (!$this->userRepository->findById($rawSale["user_id"])) {
+            throw new NotFoundException("The sale was not found or not exists");
         }
+
+        $sale = new Sale($rawSale);
+        if (!$this->repository->insert($sale)) {
+            throw new InsertException("Failed to insert sale");
+        }
+        return $sale;
     }
-
-    public function saveSaleItem($method, $rawSaleItem)
+    public function update($rawSale)
     {
-
-        if ($method === "POST") {
-            if (!Sale::findById($rawSaleItem["sale_id"])) {
-                throw new NotFoundException("The sale item was not found");
-            }
-            if (!$this->productService->getProduct($rawSaleItem["product_id"])) {
-                throw new NotFoundException("The sale item was not found");
-            }
-
-            $saleItem = new SaleItem($rawSaleItem);
-            if (!SaleItem::insert($saleItem)) {
-                throw new InsertException("Failed to insert sale item");
-            }
-            return $saleItem;
-        } else {
-            $saleItem = SaleItem::findById($rawSaleItem["id"]);
-            if (!$saleItem) {
-                throw new NotFoundException("The sale item was not found");
-            }
-            if (!Sale::findById($saleItem->getSaleId())) {
-                throw new NotFoundException("The sale item was not found");
-            }
-            if (!$this->productService->getProduct($rawSaleItem["product_id"])) {
-                throw new NotFoundException("The sale item was not found");
-            }
-            $editSale = new SaleItem($rawSaleItem);
-            if (!SaleItem::edit($editSale)) {
-                throw new UpdateException("Failed to update sale item with ID " . $saleItem->getId());
-            }
-
-            return $saleItem;
+        $saleDb = $this->getSale($rawSale["id"]);
+        $editSale = new Sale($rawSale);
+        if (!$this->repository->update($editSale)) {
+            throw new UpdateException("Failed to update sale with ID " . $editSale->getId());
         }
-    }
-
-
-    public function deleteItemById($id, $saleId)
-    {
-
-        if (!SaleItem::findById($id)) {
-            throw new NotFoundException("The sale item was not found");
-        }
-
-        if (!SaleItem::deleteBySaleId($saleId, $id)) {
-            throw new DeleteException("Failed to delete sale item");
-        }
+        return $editSale;
     }
 
     public function deleteSale($id)
     {
-        $sale = Sale::findById($id);
+        $sale = $this->repository->findById($id);
 
         if (!$sale) {
             throw new NotFoundException("The sale was not found");
         }
 
-        $products = $sale->getItems();
-        foreach ($products as $product) {
-            SaleItem::delete($product->getId());
+        $saleItems = $this->saleItemRepository->findBySale($sale);
+        foreach ($saleItems as $product) {
+            $this->saleItemRepository->delete($product->getId());
         }
-        if (!Sale::delete($id)) {
+        if (!$this->repository->delete($id)) {
             throw new DeleteException("Failed to delete sale");
         }
     }
@@ -219,26 +159,17 @@ class SaleService
 
         foreach ($sales as $sale) {
             foreach ($sale->getItems() as $item) {
-                if (!SaleItem::delete($item->getId())) {
+                if (!$this->saleItemRepository->delete($item->getId())) {
                     $deletedAll = false;
                 }
             }
 
-            if (!Sale::delete($sale->getId())) {
+            if (!$this->repository->delete($sale->getId())) {
                 $deletedAll = false;
             }
         }
         if (!$deletedAll) {
             throw new DeleteException("Failed to delete sales");
         }
-    }
-
-    public function getUserService()
-    {
-        return $this->userService;
-    }
-    public function getProductService()
-    {
-        return $this->productService;
     }
 }

@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Services\MailService;
 use App\Services\DocumentTypeService;
 use App\Models\User;
 use DateTime;
@@ -11,52 +10,39 @@ use App\Exceptions\UpdateException;
 use App\Exceptions\DeleteException;
 use App\Exceptions\NotFoundException;
 use App\Exceptions\DuplicateException;
-
+use App\Repositories\Contracts\UserRepositoryInterface;
 
 class UserService
 {
+    private UserRepositoryInterface $repository;
 
-    public function getUsers()
+    public function __construct(UserRepositoryInterface $repository)
     {
-        return User::getAll();
+        $this->repository = $repository;
+    }
+
+    public function getAll()
+    {
+        return $this->repository->findAll();
     }
 
     public function getUser($id)
     {
-        $user = User::findById($id);
+        $user = $this->repository->findById($id);
         if (!$user) {
             throw new NotFoundException("The user was not found or not exists");
         }
         return $user;
     }
-    public function getUsersWithDocumentTypeName()
-    {
-        return User::getAllWithDocumentTypeName();
-    }
 
     public function getDocumentTypes(DocumentTypeService $documentTypeService)
     {
-        return $documentTypeService->getDocument_Types();
-    }
-
-    public function getUsernames()
-    {
-        $user = User::getUsernames();
-        if (!$user) {
-            throw new NotFoundException("The user was not found or not exists");
-        }
-        $usernames = array_map(function ($user) {
-            return [
-                "id" => $user->getId(),
-                "username" => $user->getUsername()
-            ];
-        }, $user);
-        return $usernames;
+        return $documentTypeService->getAll();
     }
 
     public function getUserCountLast7Days()
     {
-        return User::getUserCountLast7Days();
+        return $this->repository->countUsersRegisteredLast7Days();
     }
 
 
@@ -66,8 +52,8 @@ class UserService
         $password = $loginData["password"];
 
         $data = $this->isEmail($login)
-            ? User::findByEmail($login)
-            : User::findByUsername($login);
+            ? $this->repository->findByEmail($login)
+            : $this->repository->findByUsername($login);
         if (!$data) {
             throw new NotFoundException("The user was not found or not exists");
         }
@@ -78,13 +64,11 @@ class UserService
         }
     }
 
-    public function deleteUser($id)
+    public function delete($id)
     {
-        if (!User::findById($id)) {
-            throw new NotFoundException("The user was not found or not exists");
-        }
+        $this->getUser($id);
 
-        if (!User::delete($id)) {
+        if (!$this->repository->delete($id)) {
             throw new DeleteException("Failed to delete user with ID $id.");
         }
     }
@@ -101,13 +85,13 @@ class UserService
 
     public function activateAccount($token)
     {
-        $user = User::findByToken($token);
+        $user = $this->repository->findByToken($token);
         if (!$user) {
             throw new NotFoundException("The user was not found or not exists");
         }
         $date = (new DateTime('now'))->format('Y-m-d H:i:s');
         if ($user->getActive() === 0 && $user->getTokenExpiredAt() > $date) {
-            if (!User::activateAccount($user)) {
+            if (!$this->repository->activateAccount($user)) {
                 throw new UpdateException("Failed to activate user with ID " . $user->getId());
             }
         }
@@ -120,47 +104,55 @@ class UserService
         return $user;
     }
 
-    public function saveUser($method, $rawUser)
+    public function paginate($params)
     {
-        if ($method === "POST") {
-            if (User::findByUsername($rawUser["username"]) || User::findByEmail($rawUser["email"])) {
-                throw new DuplicateException("The username or email already exists");
-            }
+        return $this->repository->paginate($params);
+    }
 
-            $user = new User($rawUser);
-            $hash = password_hash($user->getPassword(), PASSWORD_BCRYPT);
-            $user->setPassword($hash);
-            $user = $this->generateToken($user);
+    public function paginateDetailed($params)
+    {
+        return $this->repository->paginateDetailed($params);
+    }
 
-            if (!User::insert($user)) {
-                throw new InsertException("Failed to insert user with ID " . $user->getId());
-            } else {
-                return $user;
-            }
+    public function save($rawUser)
+    {
+        if ($this->repository->findByUsername($rawUser["username"]) || $this->repository->findByEmail($rawUser["email"])) {
+            throw new DuplicateException("The username or email already exists");
+        }
+
+        $user = new User($rawUser);
+        $hash = password_hash($user->getPassword(), PASSWORD_BCRYPT);
+        $user->setPassword($hash);
+        $user = $this->generateToken($user);
+
+        if (!$this->repository->insert($user)) {
+            throw new InsertException("Failed to insert user with ID " . $user->getId());
         } else {
-            $userDb = User::findById($rawUser["id"]);
-
-            if (!$userDb) {
-                throw new NotFoundException("The user was not found or not exists");
-            }
-            $userNameFound = User::findByUsername($rawUser["username"]);
-
-            if ($userNameFound && $userNameFound->getId() !== $userDb->getId()) {
-                throw new DuplicateException("The username already exists");
-            }
-            $emailFound = User::findByEmail($rawUser["email"]);
-            if ($emailFound && $emailFound->getId() !== $userDb->getId()) {
-                throw new DuplicateException("The email already exists");
-            }
-            $user = $this->set($userDb, $rawUser);
-
-            if (!User::edit($user)) {
-                throw new UpdateException("Failed to update user with ID " . $userDb->getId());
-            } else {
-                return $user;
-            }
+            return $user;
         }
     }
+    public function update($rawUser)
+    {
+        $userDb = $this->getUser($rawUser["id"]);
+
+        $userNameFound = $this->repository->findByUsername($rawUser["username"]);
+
+        if ($userNameFound && $userNameFound->getId() !== $userDb->getId()) {
+            throw new DuplicateException("The username already exists");
+        }
+
+        $emailFound = $this->repository->findByEmail($rawUser["email"]);
+        if ($emailFound && $emailFound->getId() !== $userDb->getId()) {
+            throw new DuplicateException("The email already exists");
+        }
+        $user = $this->set($userDb, $rawUser);
+
+        if (!$this->repository->update($user)) {
+            throw new UpdateException("Failed to update user with ID " . $userDb->getId());
+        }
+        return $user;
+    }
+
 
     private function set($user, $data)
     {
@@ -188,15 +180,27 @@ class UserService
 
     public function saveImage($image, $userId)
     {
-        $user = User::findById($userId);
-        if (!$user) {
-            throw new NotFoundException("The user was not found or not exists");
+        $isValid = $this->validateImage($image);
+        if ($isValid) {
+            $user = $this->getUser($userId);
+            $upload  = $this->uploadImage($image);
+            $user->setImage($upload);
+            $this->repository->update($user);
+            return $user->getImage();
+        }
+    }
+
+    private function validateImage($image)
+    {
+        if ($image->getError() !== UPLOAD_ERR_OK) {
+            return false;
         }
 
-        $upload  = $this->uploadImage($image);
-        $user->setImage($upload);
-        User::edit($user);
-        return $user->getImage();
+        $maxSize = 5 * 1024 * 1024; // 5MB
+        if ($image->getSize() > $maxSize) {
+            return false;
+        }
+        return true;
     }
 
     private function uploadImage($image)

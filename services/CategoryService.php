@@ -3,97 +3,123 @@
 namespace App\Services;
 
 use App\Models\Category;
+use App\Models\Product;
 use App\Exceptions\InsertException;
 use App\Exceptions\UpdateException;
 use App\Exceptions\DeleteException;
 use App\Exceptions\NotFoundException;
 use App\Exceptions\DuplicateException;
-
+use App\Repositories\Contracts\CategoryRepositoryInterface;
+use App\Repositories\Contracts\ProductRepositoryInterface;
 
 class CategoryService
 {
+    private CategoryRepositoryInterface $repository;
+    private ProductRepositoryInterface $productRepository;
 
-    public function getCategories()
+    public function __construct(CategoryRepositoryInterface $repository, ProductRepositoryInterface $productRepository)
     {
-        return Category::getAll();
+        $this->repository = $repository;
+        $this->productRepository = $productRepository;
+    }
+
+    public function getAll()
+    {
+        return $this->repository->findAll();
     }
 
     public function getCategory($id)
     {
-        $category = Category::findById($id);
+        $category = $this->repository->findById($id);
         if (!$category) {
             throw new NotFoundException("The category was not found or not exists");
         }
         return $category;
     }
 
-    public function getCategoriesName()
+    public function getCategoryByName($name)
     {
-        $category = Category::getIdAndName();
+        $category = $this->repository->findByName($name);
         if (!$category) {
             throw new NotFoundException("The category was not found or not exists");
         }
         return $category;
     }
 
-    public function getActiveCategories()
+    public function getActive()
     {
-        $categories = Category::getAll();
-        return array_filter($categories, fn($category) => $category->getActive() === 1);
+        return $this->repository->findActive();
     }
 
-    public function deleteCategory($id, ProductService $productService)
+    public function getCategoryByProduct(Product $product)
     {
-        if (!Category::findById($id)) {
-            throw new NotFoundException("The category was not found or not exists");
-        }
+        return $this->repository->findByProduct($product);
+    }
+    
+    public function paginate($params)
+    {
+        return $this->repository->paginate($params);
+    }
 
-        $products = $productService->getProductsByCategory($id);
+    public function delete($id)
+    {
+        $this->getCategory($id);
+
+        $products = $this->productRepository->findByCategory($id);
         if ($products) {
             foreach ($products as $product) {
-               $productService->deleteProduct($product->getId());
+                $this->productRepository->delete($product->getId());
             }
         }
-        if (!Category::delete($id)) {
+        if (!$this->repository->delete($id)) {
             throw new DeleteException("Failed to delete category with ID $id.");
         }
     }
 
-    public function saveCategory($method, $rawCategory)
+    public function save($rawCategory)
     {
-        if ($method === "POST") {
-            if (Category::findByName($rawCategory["name"])) {
-                throw new DuplicateException("The category name already exists");
-            }
+        if ($this->repository->findByName($rawCategory["name"])) {
+            throw new DuplicateException("The category name already exists");
+        }
 
-            $category = new Category($rawCategory);
+        $category = new Category($rawCategory);
 
-            if (!Category::insert($category)) {
-                throw new InsertException("Failed to insert category with ID " . $category->getId());
-            } else {
-                return $category;
-            }
-        } else {
-            $categoryDb = Category::findById($rawCategory["id"]);
+        if (!$this->repository->insert($category)) {
+            throw new InsertException("Failed to insert category with ID " . $category->getId());
+        }
+        return $category;
+    }
+    public function update($rawCategory)
+    {
+        $categoryDb = $this->getCategory($rawCategory["id"]);
 
-            if (!$categoryDb) {
-                throw new NotFoundException("The category was not found or not exists");
-            }
-            $categoryNameFound = Category::findByName($rawCategory["name"]);
+        $categoryNameFound = $this->repository->findByName($rawCategory["name"]);
 
-            if ($categoryNameFound && $categoryNameFound->getId() !== $categoryDb->getId()) {
-                throw new DuplicateException("The category name already exists");
-            }
+        if ($categoryNameFound && $categoryNameFound->getId() !== $categoryDb->getId()) {
+            throw new DuplicateException("The category name already exists");
+        }
+        $this->set($categoryDb, $rawCategory);
 
-            $categoryDb->setName($rawCategory["name"]);
-            $categoryDb->setDescription($rawCategory["description"] ?? $categoryDb->getDescription());
-            $categoryDb->setActive($rawCategory["active"] ?? $categoryDb->getActive());
+        if (!$this->repository->update($categoryDb)) {
+            throw new UpdateException("Failed to update category with ID " . $categoryDb->getId());
+        }
+        return $categoryDb;
+    }
 
-            if (!Category::edit($categoryDb)) {
-                throw new UpdateException("Failed to update category with ID " . $categoryDb->getId());
-            } else {
-                return $categoryDb;
+    private function set($productDb, $rawProduct)
+    {
+        $allowedFields = ['name', 'description', 'active', 'slug'];
+
+        foreach ($allowedFields as $field) {
+            if (isset($rawProduct[$field])) {
+                $method = 'set' . str_replace(' ', '', ucwords(str_replace('_', ' ', $field)));
+
+                if (method_exists($productDb, $method)) {
+                    $productDb->$method($rawProduct[$field]);
+                }
             }
         }
+
+        return $productDb;
     }
 }
