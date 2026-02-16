@@ -137,6 +137,11 @@ class PaginationHelper
         $length = (int)($params['length'] ?? 10);
         $search = $params['search']['value'] ?? '';
         $orderColumnIndex = $params['order'][0]['column'] ?? 0;
+
+        if (!isset($params['order'])) {
+            $params['order'][0]['dir'] = 'desc';
+        }
+
         $orderDir = $params['order'][0]['dir'] === $defaultOrderDir ? 'asc' : 'desc';
 
         $orderBy = $validColumns[$orderColumnIndex] ?? $validColumns[0];
@@ -194,6 +199,9 @@ class PaginationHelper
         $search = $params['search']['value'] ?? '';
         $orderColumnIndex = (int)($params['order'][0]['column'] ?? 0);
         $defaultOrderDir = "desc";
+        if (!isset($params['order'])) {
+            $params['order'][0]['dir'] = 'desc';
+        }
         $orderDir = $params['order'][0]['dir'] === $defaultOrderDir ? 'asc' : 'desc';
         $data = $dataArray['data'];
         $row = array_values($data)[0];
