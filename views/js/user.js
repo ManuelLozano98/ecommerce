@@ -118,7 +118,7 @@ function getUsers() {
           if (data !== "") {
             result = `<img alt="${data.substring(
               0,
-              data.indexOf(".")
+              data.indexOf("."),
             )}" src="uploads/images/${data}" width="100px" height="100px" object-fit:cover;/>`;
           }
           return result;
@@ -191,7 +191,7 @@ function loadEditForm() {
 
 async function loadDocumentTypes(selectHtml, id = "") {
   if (document.getElementById(selectHtml).children.length <= 0) {
-    const { data, error } = await apiRequest(`api/users/documentType/`, {
+    const { data, error } = await apiRequest(`api/users/document-type/`, {
       method: "GET",
     });
     if (data) {
@@ -232,28 +232,25 @@ async function insert() {
     if (imageFile) {
       const imageForm = new FormData();
       imageForm.append("image", imageFile);
-      const { dataImage, errorImage } = await fetch(
-        `api/users/${data.data.id}/image`,
-        {
-          method: "POST",
-          body: imageForm,
-        }
-      );
-      if (dataImage) {
-        notifySuccessResponse(API_MSGS.Updated);
-        getDatatable("tableUsers").ajax.reload(null, false);
-        return;
+      const response = await fetch(`api/users/${data.data.id}/image`, {
+        method: "POST",
+        body: imageForm,
+      });
+      let result = null;
+
+      try {
+        result = await response.json();
+      } catch (e) {
+        result = null;
       }
-      if (errorImage) {
-        notifyErrorResponse(errorImage);
-        return;
+
+      if (!response.ok) {
+        notifyErrorResponse(result || { message: "Error uploading image" });
       }
     }
-    if (error) {
-      notifyErrorResponse(error);
-    }
-    notifySuccessResponse(API_MSGS.Updated);
+    notifySuccessResponse(API_MSGS.Created);
     getDatatable("tableUsers").ajax.reload(null, false);
+    return;
   }
   if (error) {
     notifyErrorResponse(error);
@@ -281,28 +278,25 @@ async function edit() {
     if (imageFile) {
       const imageForm = new FormData();
       imageForm.append("image", imageFile);
-      const { dataImage, errorImage } = await fetch(
-        `api/users/${data.data.id}/image`,
-        {
-          method: "POST",
-          body: imageForm,
-        }
-      );
-      if (dataImage) {
-        notifySuccessResponse(API_MSGS.Updated);
-        getDatatable("tableUsers").ajax.reload(null, false);
-        return;
+      const response = await fetch(`api/users/${data.data.id}/image`, {
+        method: "POST",
+        body: imageForm,
+      });
+      let result = null;
+
+      try {
+        result = await response.json();
+      } catch (e) {
+        result = null;
       }
-      if (errorImage) {
-        notifyErrorResponse(errorImage);
-        return;
+
+      if (!response.ok) {
+        notifyErrorResponse(result || { message: "Error uploading image" });
       }
-    }
-    if (error) {
-      notifyErrorResponse(error);
     }
     notifySuccessResponse(API_MSGS.Updated);
     getDatatable("tableUsers").ajax.reload(null, false);
+    return;
   }
   if (error) {
     notifyErrorResponse(error);
@@ -402,7 +396,7 @@ function redirectTab(formSelector) {
 function verify() {
   $.validator.addMethod("usernameValidator", function (value, element) {
     return /^[a-zA-Z0-9](?!.*[_.]{2})[a-zA-Z0-9._]{2,18}[a-zA-Z0-9]$/.test(
-      value
+      value,
     );
   });
 
@@ -423,7 +417,7 @@ function verify() {
     function (value, element, param) {
       let passwordValue = $(param).val();
       return value === passwordValue;
-    }
+    },
   );
   $.validator.addMethod("phoneValidator", function (value, element) {
     return this.optional(element) || /^[6-9]\d{8}$/.test(value);
@@ -481,7 +475,7 @@ function verify() {
       if (flag === 2)
         return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/.test(value);
       return false;
-    }
+    },
   );
 
   let commonRules = {
