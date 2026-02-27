@@ -53,16 +53,33 @@
                 <!-- Content Header (Page header) -->
                 <section class="content-header">
                     <div class="container-fluid">
+                        <div class="row mb-2">
+                            <div class="col-sm-6">
+                                <h1>Products</h1>
+                            </div>
+                            <div class="col-sm-6">
+                                <ol class="breadcrumb float-sm-right">
+                                    <li class="breadcrumb-item"><a href="<?php echo ROOT ?>">Home</a></li>
+                                    <li class="breadcrumb-item active">
+                                        <?php echo $data['category']->getName(); ?>
+                                    </li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div><!-- /.container-fluid -->
+                </section>
+                <section class="content">
+                    <div class="container-fluid">
                         <form id="filter-form">
                             <div class="row mb-2">
                                 <div class="col-12 col-md-6">
-                                    <h1>Products</h1>
+                                    <h3>Search</h3>
                                     <div id="search">
                                         <input type="text" class="form-control search-form search-product" name="search" placeholder="Search any product" value="">
                                     </div>
                                 </div>
                                 <div class="col-12 col-md-6">
-                                    <h1>Filters</h1>
+                                    <h3>Filters</h3>
                                     <div class="filters d-flex flex-wrap gap-2 align-items-center">
                                         <!-- Advanced price filter -->
                                         <div class="dropdown d-inline-block">
