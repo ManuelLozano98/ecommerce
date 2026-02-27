@@ -92,10 +92,13 @@ class ProductService
         return $products;
     }
 
-    public function getProductsByPriceRange($min, $max)
+    public function getProductsByPriceRange($min, $max, $order = "ASC")
     {
+        if ($order !== "ASC") {
+            $order = "DESC";
+        }
 
-        return $this->repository->findByPriceRange($min, $max);
+        return $this->repository->findByPriceRange($min, $max, $order);
     }
 
     public function getTopSellers()
@@ -111,6 +114,36 @@ class ProductService
     public function getProductsOrderedByReviewScore($order)
     {
         return $this->repository->findOrderedByReviewScore($order);
+    }
+
+    public function getLowestPrice()
+    {
+        return $this->repository->findLowestPrice();
+    }
+
+    public function getHigherPrice()
+    {
+        return $this->repository->findHigherPrice();
+    }
+
+    public function getProductsRawFiltered($filters, $limit, $offset)
+    {
+        return $this->repository->applyFilters($filters, $limit, $offset);
+    }
+    public function getProductsFiltered($filters, $limit, $offset)
+    {
+        $products = $this->repository->applyFilters($filters, $limit, $offset);
+        $data = [];
+        foreach ($products as $row) {
+            $products[] = new Product($row);
+        }
+        return $data;
+    }
+
+
+    public function countFiltered($filters)
+    {
+        return $this->repository->countFiltered($filters);
     }
 
     public function paginate($params)

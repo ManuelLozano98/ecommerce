@@ -26,17 +26,25 @@ interface ProductRepositoryInterface
 
     public function findActiveByCategoryPaginated(string $category, int $limit, int $offset): array;
 
-    public function findByPriceRange(?float $min, ?float $max): array;
-    
+    public function findByPriceRange(?float $min, ?float $max, string $order = "ASC"): array;
+
     public function findTopSellers(): array;
-    
+
     public function findByMinReviewScore(int $score): array;
-    
+
     public function findOrderedByReviewScore(string $order): array;
 
+    public function findLowestPrice(): ?Product;
+
+    public function findHigherPrice(): ?Product;
+
+    public function applyFilters(array $filters, int $limit, int $offset): array;
+
     public function countAll(): int;
-    
+
     public function countNew(): int;
+
+    public function countFiltered(array $filters): int;
 
     public function paginate(array $params): array;
 

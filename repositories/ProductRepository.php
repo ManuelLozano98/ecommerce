@@ -2,7 +2,6 @@
 
 namespace App\Repositories;
 
-use App\Models\Category;
 use App\Models\Product;
 use App\Utils\DatabaseHelper;
 use App\Utils\PaginationHelper;
@@ -115,7 +114,7 @@ class ProductRepository implements ProductRepositoryInterface
         }
         return $products;
     }
-    public function findByPriceRange(?float $min, ?float $max): array
+    public function findByPriceRange(?float $min, ?float $max, string $order = "ASC"): array
     {
         $sql = "SELECT * FROM products WHERE active = 1";
         $params = [];
@@ -132,7 +131,8 @@ class ProductRepository implements ProductRepositoryInterface
             $params[] = $max;
             $types .= "d";
         }
-        $data = DatabaseHelper::getDataPreparedQuery($sql, $types, $params);
+        $sql .= " ORDER BY price $order";
+        $data = DatabaseHelper::getDataPreparedQuery($sql, $types, ...$params);
         $products = [];
         foreach ($data as $product) {
             $products[] = new Product($product);
@@ -146,7 +146,7 @@ class ProductRepository implements ProductRepositoryInterface
                  FROM products p
                  JOIN reviews r ON r.product_id = p.id
                  GROUP BY p.id
-                 ORDER BY AVG(r.rating) $order"
+                 ORDER BY r.rating $order"
         );
         $products = [];
         foreach ($data as $product) {
@@ -171,6 +171,182 @@ class ProductRepository implements ProductRepositoryInterface
         }
         return $products;
     }
+
+    public function findLowestPrice(): Product
+    {
+        $data = DatabaseHelper::query(
+            "SELECT p.*
+                 FROM products p
+                 ORDER BY price ASC
+                 LIMIT 1"
+        );
+        return !empty($data) ? new Product($data[0]) : null;
+    }
+
+    public function findHigherPrice(): Product
+    {
+        $data = DatabaseHelper::query(
+            "SELECT p.*
+                 FROM products p
+                 ORDER BY price DESC
+                 LIMIT 1"
+        );
+        return !empty($data) ? new Product($data[0]) : null;
+    }
+
+    public function applyFilters(array $filters, int $limit, int $offset): array
+    {
+        $params = [];
+        $types = "";
+
+        $sql = "
+        SELECT 
+            p.*,
+            COUNT(DISTINCT si.id) as total_sales,
+            AVG(DISTINCT r.rating) as avg_rating
+        FROM products p
+        LEFT JOIN sale_items si ON si.product_id = p.id
+        LEFT JOIN sales s ON s.id = si.sale_id 
+            AND LOWER(s.status) = 'completed'
+        LEFT JOIN reviews r ON r.product_id = p.id
+        WHERE p.active = 1
+    ";
+
+        if (!empty($filters['search'])) {
+            $sql .= "AND (name LIKE ? OR description LIKE ? OR slug LIKE ?)";
+            $params = [...$params, ...array_fill(0, 3, "%" . $filters['search'] . "%")];
+            $types .= "sss";
+        }
+
+        if (!empty($filters['categories'])) {
+            $placeholders = implode(",", array_fill(0, count($filters['categories']), "?"));
+            $sql .= " AND p.category_id IN ($placeholders)";
+            foreach ($filters['categories'] as $category) {
+                $params[] = $category;
+                $types .= "i";
+            }
+        }
+
+        if (!empty($filters['prices']) && count($filters['prices']) === 2) {
+            if ($filters['prices'][0] === $filters['prices'][1]) {
+                $sql .= " AND p.price <= ?";
+                $params[] = $filters['prices'][0];
+                $types .= "d";
+            } else {
+                $sql .= " AND p.price BETWEEN ? AND ?";
+                $params[] = $filters['prices'][0];
+                $params[] = $filters['prices'][1];
+                $types .= "dd";
+            }
+        }
+
+        $sql .= " GROUP BY p.id";
+
+        if (!empty($filters['scores'])) {
+            $scoreConditions = [];
+            foreach ($filters['scores'] as $score) {
+                $scoreConditions[] = "(avg_rating >= ? AND avg_rating < ?)";
+                $params[] = $score;
+                $params[] = $score + 1;
+                $types .= "dd";
+            }
+            $sql .= " HAVING " . implode(" OR ", $scoreConditions);
+        }
+
+        switch ($filters['sort'] ?? '') {
+
+            case 'top_sellers':
+                $sql .= " ORDER BY total_sales DESC";
+                break;
+
+            case 'top_rated':
+                $sql .= " ORDER BY avg_rating DESC";
+                break;
+
+            case 'price_asc':
+                $sql .= " ORDER BY p.price ASC";
+                break;
+
+            case 'price_desc':
+                $sql .= " ORDER BY p.price DESC";
+                break;
+
+            default:
+                $sql .= " ORDER BY p.id DESC";
+        }
+
+
+        $sql .= " LIMIT ? OFFSET ?";
+        $params[] = $limit;
+        $params[] = $offset;
+        $types .= "ii";
+
+        $data = DatabaseHelper::getDataPreparedQuery($sql, $types, ...$params);
+
+        return $data;
+    }
+    public function countFiltered(array $filters): int
+    {
+        $params = [];
+        $types = "";
+
+
+        $sql = "
+        SELECT COUNT(*) AS total FROM (
+            SELECT p.id, AVG(DISTINCT r.rating) as avg_rating
+            FROM products p
+            LEFT JOIN sale_items si ON si.product_id = p.id
+            LEFT JOIN sales s ON s.id = si.sale_id 
+                AND LOWER(s.status) = 'completed'
+            LEFT JOIN reviews r ON r.product_id = p.id
+            WHERE p.active = 1
+    ";
+
+        if (!empty($filters['search'])) {
+            $sql .= "AND (name LIKE ? OR description LIKE ? OR slug LIKE ?)";
+            $params = [...$params, ...array_fill(0, 3, "%" . $filters['search'] . "%")];
+            $types .= "sss";
+        }
+
+        if (!empty($filters['categories'])) {
+            $placeholders = implode(",", array_fill(0, count($filters['categories']), "?"));
+            $sql .= " AND p.category_id IN ($placeholders)";
+            foreach ($filters['categories'] as $category) {
+                $params[] = $category;
+                $types .= "i";
+            }
+        }
+
+        if (!empty($filters['prices']) && count($filters['prices']) === 2) {
+            $sql .= " AND p.price BETWEEN ? AND ?";
+            $params[] = $filters['prices'][0];
+            $params[] = $filters['prices'][1];
+            $types .= "dd";
+        }
+
+        $sql .= " GROUP BY p.id";
+
+        if (!empty($filters['scores'])) {
+            $scoreConditions = [];
+            foreach ($filters['scores'] as $score) {
+                $scoreConditions[] = "(avg_rating >= ? AND avg_rating < ?)";
+                $params[] = $score;
+                $params[] = $score + 1;
+                $types .= "dd";
+            }
+            $sql .= " HAVING " . implode(" OR ", $scoreConditions);
+        }
+
+        if (!$types) {
+            return $this->countAll();
+        }
+        $sql .= " ) AS TMP";
+        $result = DatabaseHelper::getDataPreparedQuery($sql, $types, ...$params);
+
+        return $result[0]['total'] ?? 0;
+    }
+
+
 
     // public function findCategory()
     public function countAll(): int
