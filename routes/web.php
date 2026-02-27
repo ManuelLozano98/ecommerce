@@ -10,6 +10,7 @@ use App\Controllers\RoleController;
 use App\Controllers\UserController;
 use App\Controllers\ReviewController;
 use App\Controllers\SaleController;
+use App\Controllers\Controller;
 
 return function (App $app) {
 
@@ -20,10 +21,10 @@ return function (App $app) {
     $roleController = new RoleController($renderer);
     $reviewController = new ReviewController($renderer);
     $saleController = new SaleController($renderer);
+    $controller = new Controller($renderer);
 
-    $app->get('/', function ($request, $response) {
-        $response->getBody()->write('Welcome to the E-commerce');
-        return $response;
+    $app->get('/', function ($request, $response, $args) use ($controller) {
+        return $controller->index($request, $response, $args);
     });
     $app->get('/home/', function ($request, $response) {
         $response->getBody()->write('Welcome to the E-commerce');
@@ -47,5 +48,13 @@ return function (App $app) {
     });
     $app->get('/sales/', function ($request, $response, $args) use ($saleController) {
         return $saleController->index($request, $response, $args);
+    });
+
+    $app->get('/{category:[a-z0-9-]+}/{slug:[a-z0-9-]+}/', function ($request, $response, $args) use ($controller) {
+        return $controller->viewProduct($request, $response, $args);
+    });
+
+    $app->get('/{category:[a-z0-9-]+}/', function ($request, $response, $args) use ($controller) {
+        return $controller->viewCategoryProducts($request, $response, $args);
     });
 };
