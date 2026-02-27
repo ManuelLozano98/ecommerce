@@ -123,11 +123,11 @@ class Controller
 
     public function viewCategoryProducts($request, $response, $args)
     {
-        $category = $args['category'];
+        $categoryURL = $args['category'];
         $categoryRepository = new CategoryRepository();
         $productRepository = new ProductRepository();
         $categoryService = new CategoryService($categoryRepository, $productRepository);
-        $category = $categoryService->getCategoryByName($category);
+        $category = $categoryService->getCategoryByName($categoryURL);
         if (!$category) {
             return $this->renderer->render($response, "404.php");
         }
@@ -168,7 +168,7 @@ class Controller
 
             foreach ($products as $row) {
 
-                $category = $categoryService->getCategory($row['category_id']);
+                $productCategory = $categoryService->getCategory($row['category_id']);
 
                 $ratingStats = $reviewService->getProductRatingStats($row['id']);
                 $reviewPerProduct[$row['id']] = $ratingStats;
@@ -180,7 +180,7 @@ class Controller
                     "price" => $row['price'],
                     "image" => $row['image'],
                     "slug" => $row['slug'],
-                    "category" => $category->getName(),
+                    "category" => $productCategory->getName(),
                     "average" => $row['avg_rating'] ?? 0,
                     "total_sales" => $row['total_sales'] ?? 0
                 ];
@@ -216,7 +216,8 @@ class Controller
             "totalPages" => $totalPages,
             "currentPage" => $page,
             "totalProducts" => $total,
-            "records" => count($products)
+            "records" => count($products),
+            "category" => $category
         ];
 
         return $this->renderer->render($response, "category.php", $data);
