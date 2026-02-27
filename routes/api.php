@@ -1,6 +1,5 @@
 <?php
 
-use Slim\App;
 use App\Api\CategoryApi;
 use App\Api\ProductApi;
 use App\Api\RoleApi;
@@ -28,8 +27,9 @@ use App\Services\SaleService;
 use App\Services\UserRoleService;
 use App\Services\UserService;
 use Rakit\Validation\Validator;
+use Slim\Routing\RouteCollectorProxy;
 
-return function (App $app) {
+return function (RouteCollectorProxy $group) {
     $validator = new Validator();
     $categoryRepository = new CategoryRepository();
     $productRepository = new ProductRepository();
@@ -61,77 +61,76 @@ return function (App $app) {
     $saleApi = new SaleApi($saleService, $validator);
     $saleItemApi = new SaleItemApi($saleItemService, $validator);
 
-
-    $app->get('/api/categories/name/', [$categoryApi, 'getCategoriesName']);
-    $app->get('/api/categories/', [$categoryApi, 'getAll']);
-    $app->get('/api/categories/{id:[0-9]+}/', [$categoryApi, 'getCategoryById']);
-    $app->post('/api/categories/', [$categoryApi, 'save']);
-    $app->put('/api/categories/{id:[0-9]+}/', [$categoryApi, 'save']);
-    $app->delete('/api/categories/{id:[0-9]+}/', [$categoryApi, 'delete']);
-
-
-    $app->get('/api/products/name/', [$productApi, 'getProductsName']);
-    $app->get('/api/products/code/{code}/', [$productApi, 'getProductByCode']);
-    $app->get('/api/products/', [$productApi, 'getAll']);
-    $app->get('/api/products/detailed/', [$productApi, 'getProductsDetailed']);
-    $app->get('/api/products/{id:[0-9]+}/', [$productApi, 'getProductById']);
-    $app->post('/api/products/', [$productApi, 'save']);
-    $app->post('/api/products/{id:[0-9]+}/image/', [$productApi, 'saveImage']);
-    $app->put('/api/products/{id:[0-9]+}/', [$productApi, 'save']);
-    $app->delete('/api/products/{id:[0-9]+}/', [$productApi, 'delete']);
-
-    $app->get('/api/products/{id:[0-9]+}/reviews/', [$reviewApi, 'getProductReviews']);
-    $app->delete('/api/products/{id:[0-9]+}/reviews/', [$reviewApi, 'deleteReviewsbyProduct']);
-    $app->delete('/api/products/{product_id:[0-9]+}/reviews/{review_id:[0-9]+}/', [$reviewApi, 'deleteReviewbyProduct']);
-
-    $app->get('/api/users/document-type/', [$userApi, 'getDocumentType']);
-    $app->get('/api/users/', [$userApi, 'getAll']);
-    $app->get('/api/users/detailed/', [$userApi, 'getUsersDetailed']);
-    $app->get('/api/users/{id:[0-9]+}/', [$userApi, 'getUserById']);
-    $app->get('/api/users/username/', [$userApi, 'getUsernames']);
-    $app->post('/api/users/', [$userApi, 'save']);
-    $app->post('/api/users/{id:[0-9]+}/image/', [$userApi, 'saveImage']);
-    $app->put('/api/users/{id:[0-9]+}/', [$userApi, 'save']);
-    $app->delete('/api/users/{id:[0-9]+}/', [$userApi, 'delete']);
-
-    $app->get('/api/users/roles/', [$userRoleApi, 'getAll']);
-    $app->get('/api/users/roles/detailed/', [$userRoleApi, 'getUserRolesDetailed']);
-    $app->post('/api/users/{id:[0-9]+}/roles/', [$userRoleApi, 'save']);
-    $app->delete('/api/users/{user_id:[0-9]+}/roles/', [$userRoleApi, 'deleteRolesByUserId']);
-    $app->delete('/api/users/{id:[0-9]+}/roles/{role_id:[0-9]+}/', [$userRoleApi, 'deletebyUserIdAndRoleId']);
-
-    $app->get('/api/users/{id:[0-9]+}/reviews/', [$reviewApi, 'getUserReviews']);
-    $app->delete('/api/users/{id:[0-9]+}/reviews/', [$reviewApi, 'deleteReviewsbyUser']);
-    $app->delete('/api/users/{user_id:[0-9]+}/reviews/{review_id:[0-9]+}/', [$reviewApi, 'deleteReviewbyUser']);
+    $group->get('/categories/{id:[0-9]+}/', [$categoryApi, 'getCategoryById']);
+    $group->get('/categories/name/', [$categoryApi, 'getCategoriesName']);
+    $group->get('/categories/', [$categoryApi, 'getAll']);
+    $group->post('/categories/', [$categoryApi, 'save']);
+    $group->put('/categories/{id:[0-9]+}/', [$categoryApi, 'save']);
+    $group->delete('/categories/{id:[0-9]+}/', [$categoryApi, 'delete']);
 
 
-    $app->get('/api/roles/name/', [$roleApi, 'getRolesName']);
-    $app->get('/api/roles/', [$roleApi, 'getAll']);
-    $app->get('/api/roles/{id:[0-9]+}/', [$roleApi, 'getRoleById']);
-    $app->post('/api/roles/', [$roleApi, 'save']);
-    $app->put('/api/roles/{id:[0-9]+}/', [$roleApi, 'save']);
-    $app->delete('/api/roles/{id:[0-9]+}/', [$userRoleApi, 'delete']);
+    $group->get('/products/name/', [$productApi, 'getProductsName']);
+    $group->get('/products/code/{code}/', [$productApi, 'getProductByCode']);
+    $group->get('/products/', [$productApi, 'getAll']);
+    $group->get('/products/detailed/', [$productApi, 'getProductsDetailed']);
+    $group->get('/products/{id:[0-9]+}/', [$productApi, 'getProductById']);
+    $group->post('/products/', [$productApi, 'save']);
+    $group->post('/products/{id:[0-9]+}/image/', [$productApi, 'saveImage']);
+    $group->put('/products/{id:[0-9]+}/', [$productApi, 'save']);
+    $group->delete('/products/{id:[0-9]+}/', [$productApi, 'delete']);
+
+    $group->get('/products/{id:[0-9]+}/reviews/', [$reviewApi, 'getProductReviews']);
+    $group->delete('/products/{id:[0-9]+}/reviews/', [$reviewApi, 'deleteReviewsbyProduct']);
+    $group->delete('/products/{product_id:[0-9]+}/reviews/{review_id:[0-9]+}/', [$reviewApi, 'deleteReviewbyProduct']);
+
+    $group->get('/users/document-type/', [$userApi, 'getDocumentType']);
+    $group->get('/users/', [$userApi, 'getAll']);
+    $group->get('/users/detailed/', [$userApi, 'getUsersDetailed']);
+    $group->get('/users/{id:[0-9]+}/', [$userApi, 'getUserById']);
+    $group->get('/users/username/', [$userApi, 'getUsernames']);
+    $group->post('/users/', [$userApi, 'save']);
+    $group->post('/users/{id:[0-9]+}/image/', [$userApi, 'saveImage']);
+    $group->put('/users/{id:[0-9]+}/', [$userApi, 'save']);
+    $group->delete('/users/{id:[0-9]+}/', [$userApi, 'delete']);
+
+    $group->get('/users/roles/', [$userRoleApi, 'getAll']);
+    $group->get('/users/roles/detailed/', [$userRoleApi, 'getUserRolesDetailed']);
+    $group->post('/users/{id:[0-9]+}/roles/', [$userRoleApi, 'save']);
+    $group->delete('/users/{user_id:[0-9]+}/roles/', [$userRoleApi, 'deleteRolesByUserId']);
+    $group->delete('/users/{id:[0-9]+}/roles/{role_id:[0-9]+}/', [$userRoleApi, 'deletebyUserIdAndRoleId']);
+
+    $group->get('/users/{id:[0-9]+}/reviews/', [$reviewApi, 'getUserReviews']);
+    $group->delete('/users/{id:[0-9]+}/reviews/', [$reviewApi, 'deleteReviewsbyUser']);
+    $group->delete('/users/{user_id:[0-9]+}/reviews/{review_id:[0-9]+}/', [$reviewApi, 'deleteReviewbyUser']);
 
 
-    $app->get('/api/reviews/', [$reviewApi, 'getAll']);
-    $app->get('/api/reviews/detailed/', [$reviewApi, 'getDetailedReviews']);
-    $app->get('/api/reviews/{id:[0-9]+}/', [$reviewApi, 'getReviewById']);
-    $app->post('/api/reviews/', [$reviewApi, 'save']);
-    $app->put('/api/reviews/{id:[0-9]+}/', [$reviewApi, 'save']);
-    $app->delete('/api/reviews/{id:[0-9]+}/', [$reviewApi, 'delete']);
-
-    $app->get('/api/sales/', [$saleApi, 'getAll']);
-    $app->get('/api/sales/detailed/', [$saleApi, 'getAllDetailed']);
-    $app->get('/api/sales/detailed/username/', [$saleApi, 'getSalesWithUserAndItems']);
-    $app->get('/api/sales/{user_id:[0-9]+}/purchases/', [$saleApi, 'getPurchasesByUser']);
-    $app->get('/api/sales/{id:[0-9]+}/', [$saleApi, 'getSale']);
-    $app->post('/api/sales/', [$saleApi, 'save']);
-    $app->put('/api/sales/{id:[0-9]+}/', [$saleApi, 'save']);
-    $app->delete('/api/sales/{id:[0-9]+}/', [$saleApi, 'delete']);
+    $group->get('/roles/name/', [$roleApi, 'getRolesName']);
+    $group->get('/roles/', [$roleApi, 'getAll']);
+    $group->get('/roles/{id:[0-9]+}/', [$roleApi, 'getRoleById']);
+    $group->post('/roles/', [$roleApi, 'save']);
+    $group->put('/roles/{id:[0-9]+}/', [$roleApi, 'save']);
+    $group->delete('/roles/{id:[0-9]+}/', [$userRoleApi, 'delete']);
 
 
-    $app->get('/api/sale-items/', [$saleItemApi, 'getAll']);
-    $app->post('/api/sales/{id:[0-9]+}/items/', [$saleItemApi, 'save']);
-    $app->put('/api/sales/{id:[0-9]+}/items/{item_id:[0-9]+}/', [$saleItemApi, 'save']);
-    $app->delete('/api/sales/{id:[0-9]+}/items/{item_id:[0-9]+}/', [$saleItemApi, 'delete']);
+    $group->get('/reviews/', [$reviewApi, 'getAll']);
+    $group->get('/reviews/detailed/', [$reviewApi, 'getDetailedReviews']);
+    $group->get('/reviews/{id:[0-9]+}/', [$reviewApi, 'getReviewById']);
+    $group->post('/reviews/', [$reviewApi, 'save']);
+    $group->put('/reviews/{id:[0-9]+}/', [$reviewApi, 'save']);
+    $group->delete('/reviews/{id:[0-9]+}/', [$reviewApi, 'delete']);
+
+    $group->get('/sales/{id:[0-9]+}/', [$saleApi, 'getSale']);
+    $group->get('/sales/{user_id:[0-9]+}/purchases/', [$saleApi, 'getPurchasesByUser']);
+    $group->get('/sales/', [$saleApi, 'getAll']);
+    $group->get('/sales/detailed/', [$saleApi, 'getAllDetailed']);
+    $group->get('/sales/detailed/username/', [$saleApi, 'getSalesWithUserAndItems']);
+    $group->post('/sales/', [$saleApi, 'save']);
+    $group->put('/sales/{id:[0-9]+}/', [$saleApi, 'save']);
+    $group->delete('/sales/{id:[0-9]+}/', [$saleApi, 'delete']);
+
+
+    $group->get('/sale-items/', [$saleItemApi, 'getAll']);
+    $group->post('/sales/{id:[0-9]+}/items/', [$saleItemApi, 'save']);
+    $group->put('/sales/{id:[0-9]+}/items/{item_id:[0-9]+}/', [$saleItemApi, 'save']);
+    $group->delete('/sales/{id:[0-9]+}/items/{item_id:[0-9]+}/', [$saleItemApi, 'delete']);
 };
