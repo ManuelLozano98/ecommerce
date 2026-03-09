@@ -95,6 +95,22 @@ $user = $_SESSION["user"] ?? NULL;
                         </p>
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a href="product-information" class="nav-link">
+                        <i class="nav-icon fas fa-info"></i>
+                        <p>
+                            Product Information
+                        </p>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="gallery" class="nav-link">
+                        <i class="nav-icon fas fa-image"></i>
+                        <p>
+                            Gallery
+                        </p>
+                    </a>
+                </li>
             </ul>
         </nav>
         <!-- /.sidebar-menu -->

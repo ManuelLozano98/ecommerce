@@ -11,6 +11,8 @@ use App\Controllers\UserController;
 use App\Controllers\ReviewController;
 use App\Controllers\SaleController;
 use App\Controllers\Controller;
+use App\Controllers\ProductImageController;
+use App\Controllers\ProductInformationController;
 
 return function (App $app) {
 
@@ -22,6 +24,8 @@ return function (App $app) {
     $reviewController = new ReviewController($renderer);
     $saleController = new SaleController($renderer);
     $controller = new Controller($renderer);
+    $productInformationController = new ProductInformationController($renderer);
+    $productImageController = new ProductImageController($renderer);
 
     $app->get('/', function ($request, $response, $args) use ($controller) {
         return $controller->index($request, $response, $args);
@@ -48,6 +52,12 @@ return function (App $app) {
     });
     $app->get('/sales/', function ($request, $response, $args) use ($saleController) {
         return $saleController->index($request, $response, $args);
+    });
+    $app->get('/product-information/', function ($request, $response, $args) use ($productInformationController) {
+        return $productInformationController->index($request, $response, $args);
+    });
+    $app->get('/gallery/', function ($request, $response, $args) use ($productImageController) {
+        return $productImageController->index($request, $response, $args);
     });
 
     $app->get('/{category:[a-z0-9-]+}/{slug:[a-z0-9-]+}/', function ($request, $response, $args) use ($controller) {
