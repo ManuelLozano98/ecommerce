@@ -269,11 +269,11 @@
         <!-- AdminLTE App -->
         <script src="<?php echo ADMINLTE ?>dist/js/adminlte.min.js"></script>
         <!-- Generic script for utilities -->
-        <script type="text/javascript" src="views/js/helper/utils.js"></script>
+        <script type="text/javascript" src="<?php echo ROOT . "/" ?>views/js/helper/utils.js"></script>
         <!-- Ion Slider -->
         <script src="<?php echo ADMINLTE ?>plugins/ion-rangeslider/js/ion.rangeSlider.min.js"></script>
         <!-- Page specific script -->
-        <script type="text/javascript" src="views/js/index.js"></script>
+        <script type="text/javascript" src="<?php echo ROOT . "/" ?>views/js/index.js"></script>
     </body>
 
     </html>
