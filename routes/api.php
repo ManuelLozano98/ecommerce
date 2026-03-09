@@ -8,6 +8,8 @@ use App\Api\UserRoleApi;
 use App\Api\ReviewApi;
 use App\Api\SaleApi;
 use App\Api\SaleItemApi;
+use App\Api\ProductImageApi;
+use App\Api\ProductInformationApi;
 use App\Repositories\CategoryRepository;
 use App\Repositories\DocumentTypeRepository;
 use App\Repositories\ProductRepository;
@@ -17,6 +19,8 @@ use App\Repositories\SaleItemRepository;
 use App\Repositories\SaleRepository;
 use App\Repositories\UserRepository;
 use App\Repositories\UserRoleRepository;
+use App\Repositories\ProductImageRepository;
+use App\Repositories\ProductInformationRepository;
 use App\Services\CategoryService;
 use App\Services\DocumentTypeService;
 use App\Services\ProductService;
@@ -26,6 +30,8 @@ use App\Services\SaleItemService;
 use App\Services\SaleService;
 use App\Services\UserRoleService;
 use App\Services\UserService;
+use App\Services\ProductImageService;
+use App\Services\ProductInformationService;
 use Rakit\Validation\Validator;
 use Slim\Routing\RouteCollectorProxy;
 
@@ -41,6 +47,8 @@ return function (RouteCollectorProxy $group) {
     $saleRepository = new SaleRepository($saleItemRepository);
     $saleItemRepository = new SaleItemRepository();
     $documentTypeRepository = new DocumentTypeRepository();
+    $productImageRepository = new ProductImageRepository();
+    $productInformationRepository = new ProductInformationRepository();
 
     $categoryService = new CategoryService($categoryRepository, $productRepository);
     $productService = new ProductService($productRepository, $categoryRepository);
@@ -51,6 +59,8 @@ return function (RouteCollectorProxy $group) {
     $saleService = new SaleService($saleRepository, $userRepository, $productRepository, $saleItemRepository);
     $saleItemService = new SaleItemService($saleItemRepository, $productRepository, $saleRepository);
     $documentService = new DocumentTypeService($documentTypeRepository);
+    $productImageService = new ProductImageService($productImageRepository, $productRepository);
+    $productInformationService = new ProductInformationService($productInformationRepository, $productRepository);
 
     $categoryApi = new CategoryApi($categoryService, $validator);
     $productApi = new ProductApi($productService, $validator);
@@ -60,6 +70,8 @@ return function (RouteCollectorProxy $group) {
     $reviewApi = new ReviewApi($reviewService, $validator);
     $saleApi = new SaleApi($saleService, $validator);
     $saleItemApi = new SaleItemApi($saleItemService, $validator);
+    $productImageApi = new ProductImageApi($productImageService, $validator);
+    $productInformationApi = new ProductInformationApi($productInformationService, $validator);
 
     $group->get('/categories/{id:[0-9]+}/', [$categoryApi, 'getCategoryById']);
     $group->get('/categories/name/', [$categoryApi, 'getCategoriesName']);
@@ -133,4 +145,22 @@ return function (RouteCollectorProxy $group) {
     $group->post('/sales/{id:[0-9]+}/items/', [$saleItemApi, 'save']);
     $group->put('/sales/{id:[0-9]+}/items/{item_id:[0-9]+}/', [$saleItemApi, 'save']);
     $group->delete('/sales/{id:[0-9]+}/items/{item_id:[0-9]+}/', [$saleItemApi, 'delete']);
+
+    $group->get('/gallery/', [$productImageApi, 'getAll']);
+    $group->get('/gallery/detailed/', [$productImageApi, 'getGalleryDetailed']);
+    $group->get('/gallery/{id:[0-9]+}/', [$productImageApi, 'getOne']);
+    $group->get('/products/{product_id:[0-9]+}/gallery/', [$productImageApi, 'getByProduct']);
+    $group->post('/gallery/', [$productImageApi, 'save']);
+    $group->post('/gallery/{id:[0-9]+}/', [$productImageApi, 'update']);
+    $group->delete('/gallery/{id:[0-9]+}/', [$productImageApi, 'delete']);
+
+    $group->get('/product-information/', [$productInformationApi, 'getAll']);
+    $group->get('/product-information/detailed/', [$productInformationApi, 'getProductInformationDetailed']);
+    $group->get('/product-information/{id:[0-9]+}/', [$productInformationApi, 'getOne']);
+    $group->get('/products/{product_id:[0-9]+}/information/', [$productInformationApi, 'getByProduct']);
+    $group->get('/product-information/featured/', [$productInformationApi, 'getFeatured']);
+    $group->get('/product-information/discount/', [$productInformationApi, 'getWithDiscount']);
+    $group->post('/product-information/', [$productInformationApi, 'save']);
+    $group->put('/product-information/{id:[0-9]+}/', [$productInformationApi, 'save']);
+    $group->delete('/product-information/{id:[0-9]+}/', [$productInformationApi, 'delete']);
 };
