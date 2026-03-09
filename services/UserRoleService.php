@@ -53,11 +53,7 @@ class UserRoleService
     }
     public function getUserRolesbyUserId($userId)
     {
-        $usersRoles = $this->userRoleRepository->findByUserId($userId);
-        if (!$usersRoles) {
-            throw new NotFoundException("The user was not found or not exists");
-        }
-        return $usersRoles;
+        return $this->userRoleRepository->findByUserId($userId);
     }
 
     public function getUserRolebyUserIdAndRoleId($userId, $roleId)

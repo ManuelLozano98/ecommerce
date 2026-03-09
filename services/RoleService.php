@@ -37,14 +37,11 @@ class RoleService
 
     public function getRoleByActive($active)
     {
-        $roles = $this->repository->findByActive($active);
-        if (!$roles) {
-            throw new NotFoundException("The role was not found or not exists");
-        }
-        return $roles;
+        return $this->repository->findByActive($active);
     }
 
-    public function paginate($params){
+    public function paginate($params)
+    {
         return $this->repository->paginate($params);
     }
 

@@ -44,19 +44,11 @@ class ReviewService
     }
     public function getReviewsByProduct($id)
     {
-        $review = $this->repository->findByProductId($id);
-        if (!$review) {
-            throw new NotFoundException("The review was not found or does not exits");
-        }
-        return $review;
+        return $this->repository->findByProductId($id);
     }
     public function getReviewsByUser($id)
     {
-        $review = $this->repository->findByUserId($id);
-        if (!$review) {
-            throw new NotFoundException("The review was not found or does not exits");
-        }
-        return $review;
+        return $this->repository->findByUserId($id);
     }
     public function getReviewByProductIdAndUserId($productId, $userId)
     {
