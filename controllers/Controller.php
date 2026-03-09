@@ -2,6 +2,8 @@
 
 namespace App\Controllers;
 
+use App\Dtos\ProductViewDTO;
+use App\Dtos\UserPublicDTO;
 use Slim\Views\PhpRenderer;
 use App\Services\CategoryService;
 use App\Services\ReviewService;
@@ -11,6 +13,10 @@ use App\Repositories\ProductRepository;
 use App\Repositories\ReviewRepository;
 use App\Repositories\UserRepository;
 use App\Exceptions\NotFoundException;
+use App\Repositories\ProductImageRepository;
+use App\Repositories\ProductInformationRepository;
+use App\Services\ProductImageService;
+use App\Services\ProductInformationService;
 use App\Services\UserService;
 
 class Controller
@@ -246,30 +252,33 @@ class Controller
         $pageName = "product.php";
         $userRepository = new UserRepository();
         $reviewRepository = new ReviewRepository();
+        $productImageRepository = new ProductImageRepository();
+        $productInformationRepository = new ProductInformationRepository();
         $reviewService = new ReviewService($reviewRepository, $userRepository, $productRepository);
         $userService = new UserService($userRepository);
+        $productImageService = new ProductImageService($productImageRepository, $productRepository);
+        $productInformationService = new ProductInformationService($productInformationRepository, $productRepository);
+        $images = $productImageService->getByProductId($product->getId());
         $product->setCategory($category);
-        try {
-            $reviews = $reviewService->getReviewsByProduct($product->getId());
-            $ratingStats = $reviewService->getProductRatingStats($product->getId());
-            foreach ($reviews as $review) {
-                $user = $userService->getUser($review->getUserId());
-                $reviewData[] = [
-                    'review' => $review,
-                    'user' => $user
-                ];
-            }
-        } catch (NotFoundException) {
-            $reviewData = [];
-            $ratingStats = [
-                'average' => 0,
-                'total' => 0
+        $categories = $categoryService->getActive();
+        $productInfo = $productInformationService->getByProductId($product->getId());
+        $reviews = $reviewService->getReviewsByProduct($product->getId());
+        $ratingStats = $reviewService->getProductRatingStats($product->getId());
+        foreach ($reviews as $review) {
+            $user = $userService->getUser($review->getUserId());
+            $users[] = $user;
+            $reviewData[] = [
+                'review' => $review,
+                'user' => new UserPublicDTO($user),
             ];
         }
+        $productData = new ProductViewDTO($product, $productInfo, $images);
+
         $data = [
-            'product' => $product,
+            'product' => $productData,
             'reviews' => $reviewData,
-            'rating'  => $ratingStats
+            'rating'  => $ratingStats,
+            'categories' => $categories
 
         ];
 
