@@ -55,7 +55,12 @@ class CategoryService
     {
         return $this->repository->findByProduct($product);
     }
-    
+
+    public function getCategoryBySlug($slug)
+    {
+        return $this->repository->findBySlug($slug);
+    }
+
     public function paginate($params)
     {
         return $this->repository->paginate($params);
