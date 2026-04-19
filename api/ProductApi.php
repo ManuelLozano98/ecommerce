@@ -34,6 +34,24 @@ class ProductApi
 
             $response->getBody()->write(json_encode($payload));
             return $response->withStatus(200)->withHeader('Content-Type', 'application/json');
+        } else if (isset($params)) {
+            $search = $params['search'] ?? "";
+            $categoriesFilter = $params['categories'] ?? [];
+            $scoreFilter = $params['scores'] ?? [];
+            $priceFilter = $params['range_price'] ?? [];
+            $sort = $params['sort'] ?? "";
+            $limit = $params["limit"] ?? 0;
+            $offset = $params["offset"] ?? 0;
+
+            $filters = [
+                'search' => $search,
+                'categories' => $categoriesFilter,
+                'scores' => $scoreFilter,
+                'prices' => $priceFilter,
+                'sort' => $sort
+            ];
+            $products = $this->productService->getProductsFiltered($filters, $limit, $offset);
+            return ApiHelper::success($response, $products);
         }
 
         $products = $this->productService->getAll();
