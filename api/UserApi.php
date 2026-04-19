@@ -98,21 +98,26 @@ class UserApi
         if (!$data) {
             return ApiHelper::error($response, ['message' => 'Invalid JSON input'], 400);
         }
-        if (isset($args['id'])) {
-            $data['id'] = $args['id'];
-            $method = "PUT";
-        } else {
-            $method = "POST";
-        }
+        $isValid = $this->validate($data, $request->getMethod());
 
-        $isValid = $this->validate($data, $method);
         if (is_object($isValid) && $isValid instanceof ErrorBag) {
             $errors = $isValid->toArray();
             return ApiHelper::error($response, ['message' => 'Invalid input data', 'details' => $errors], 400);
         }
 
-        $data = $this->userService->save($method, $data);
-        return ApiHelper::success($response, $data);
+        if ($request->getMethod() === "POST") {
+            return ApiHelper::success(
+                $response,
+                $this->userService->save($data)
+            );
+        }
+        if ($request->getMethod() === "PUT") {
+            $data['id'] = $args['id'];
+            return ApiHelper::success(
+                $response,
+                $this->userService->update($data)
+            );
+        }
     }
 
     public function delete($request, $response, $args)
