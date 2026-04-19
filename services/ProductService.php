@@ -135,7 +135,7 @@ class ProductService
         $products = $this->repository->applyFilters($filters, $limit, $offset);
         $data = [];
         foreach ($products as $row) {
-            $products[] = new Product($row);
+            $data[] = new Product($row);
         }
         return $data;
     }
