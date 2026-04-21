@@ -151,7 +151,7 @@
                     <span class="brand-text font-weight-light"><?php echo SITE ?></span>
                 </a>
                 <!-- Sidebar -->
-                <div class="sidebar">
+                <div class="sidebar vh-100 overflow-auto position-sticky top-0 p-3">
 
                     <!-- Sidebar Menu -->
                     <nav class="mt-2" id="menu">
@@ -276,7 +276,7 @@
                                                         class="form-control">
                                                 </div>
 
-                                                <button class="btn btn-cart fas fa-cart-plus btn-block mb-2 font-weight-bold">
+                                                <button class="btn btn-cart fas fa-cart-plus btn-block mb-2 font-weight-bold" data-id="<?php echo $product->getId() ?>" data-product='<?php echo htmlspecialchars(json_encode($product), ENT_QUOTES, 'UTF-8') ?>'>
                                                     Add to Cart
                                                 </button>
 
@@ -517,16 +517,7 @@
         <!-- Generic script for utilities -->
         <script type="text/javascript" src="../views/js/helper/utils.js"></script>
         <!-- Page specific script -->
-        <script>
-            $(document).ready(function() {
-                $('.product-image-thumb').on('click', function() {
-                    let $image_element = $(this).find('img')
-                    $('.product-image').prop('src', $image_element.attr('src'))
-                    $('.product-image-thumb.active').removeClass('active')
-                    $(this).addClass('active')
-                })
-            })
-        </script>
+        <script type="text/javascript" src="../views/js/productView.js"></script>
     </body>
 
     </html>
