@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Dtos\UserPublicDTO;
 use App\Services\DocumentTypeService;
 use App\Models\User;
 use DateTime;
@@ -11,6 +12,7 @@ use App\Exceptions\DeleteException;
 use App\Exceptions\NotFoundException;
 use App\Exceptions\DuplicateException;
 use App\Repositories\Contracts\UserRepositoryInterface;
+use App\Exceptions\InvalidCredentialsException;
 
 class UserService
 {
@@ -48,20 +50,32 @@ class UserService
 
     public function logIn($loginData)
     {
-        $login = $loginData["login"];
-        $password = $loginData["password"];
-
-        $data = $this->isEmail($login)
+        $login = $loginData["login"] ?? "";
+        $password = $loginData["password"] ?? "";
+        $user = $this->isEmail($login)
             ? $this->repository->findByEmail($login)
             : $this->repository->findByUsername($login);
-        if (!$data) {
-            throw new NotFoundException("The user was not found or not exists");
+
+        if (!$user) {
+            throw new InvalidCredentialsException();
         }
-        if ($data->getActive() === 1 && $this->checkPassword($password, $data->getPassword())) {
-            session_start();
-            $_SESSION["user"] = $data;
-            session_regenerate_id(true);
+
+        if (!$user->getActive()) {
+            throw new \Exception("Check the email and activates your account");
         }
+
+        if (!$this->checkPassword($password, $user->getPassword())) {
+            throw new InvalidCredentialsException();
+        }
+        session_regenerate_id(true);
+        $_SESSION["user"] = ['data' => new UserPublicDTO($user)];
+
+        return true;
+    }
+
+    public function hasRole(User $user, $roleName)
+    {
+        return $this->repository->hasRole($user, $roleName);
     }
 
     public function delete($id)
