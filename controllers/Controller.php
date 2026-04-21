@@ -30,6 +30,7 @@ class Controller
     public function index($request, $response, $args)
     {
         $params = $request->getQueryParams();
+        $cart = $request->getAttribute("cart");
 
         $page = isset($params['page']) ? (int)$params['page'] : 1;
         $itemsPerPage = 24;
@@ -60,6 +61,9 @@ class Controller
         $reviewService = new ReviewService($reviewRepository, $userRepository, $productRepository);
 
         $categories = $categoryService->getActive();
+        usort($categories, function ($a, $b) {
+            return strcmp(strtolower($a->getName()), strtolower($b->getName()));
+        });
         $reviewPerProduct = [];
 
         $isAjax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === "xmlhttprequest";
@@ -121,7 +125,8 @@ class Controller
             "totalPages" => $totalPages,
             "currentPage" => $page,
             "totalProducts" => $total,
-            "records" => count($products)
+            "records" => count($products),
+            "cart" => $cart
         ];
 
         return $this->renderer->render($response, "index.php", $data);
@@ -133,12 +138,13 @@ class Controller
         $categoryRepository = new CategoryRepository();
         $productRepository = new ProductRepository();
         $categoryService = new CategoryService($categoryRepository, $productRepository);
-        $category = $categoryService->getCategoryByName($categoryURL);
+        $category = $categoryService->getCategoryBySlug($categoryURL);
         if (!$category) {
             return $this->renderer->render($response, "404.php");
         }
 
         $params = $request->getQueryParams();
+        $cart = $request->getAttribute("cart");
         $page = isset($params['page']) ? (int)$params['page'] : 1;
         $itemsPerPage = 24;
         $offset = ($page - 1) * $itemsPerPage;
@@ -161,6 +167,9 @@ class Controller
         $productService = new ProductService($productRepository, $categoryRepository);
         $reviewService = new ReviewService($reviewRepository, $userRepository, $productRepository);
         $categories = $categoryService->getActive();
+        usort($categories, function ($a, $b) {
+            return strcmp(strtolower($a->getName()), strtolower($b->getName()));
+        });
         $reviewPerProduct = [];
 
         $isAjax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === "xmlhttprequest";
@@ -223,7 +232,8 @@ class Controller
             "currentPage" => $page,
             "totalProducts" => $total,
             "records" => count($products),
-            "category" => $category
+            "category" => $category,
+            "cart" => $cart
         ];
 
         return $this->renderer->render($response, "category.php", $data);
@@ -237,7 +247,7 @@ class Controller
         $categoryRepository = new CategoryRepository();
         $categoryService = new CategoryService($categoryRepository, $productRepository);
         $productService = new ProductService($productRepository, $categoryRepository);
-        $category = $categoryService->getCategoryByName($category);
+        $category = $categoryService->getCategoryBySlug($category);
         if (!$category) {
             return $this->renderer->render($response, "404.php");
         }
@@ -247,6 +257,7 @@ class Controller
             return $this->renderer->render($response, "404.php");
         }
 
+        $cart = $request->getAttribute("cart");
         $data = [];
         $reviewData = [];
         $pageName = "product.php";
@@ -261,6 +272,9 @@ class Controller
         $images = $productImageService->getByProductId($product->getId());
         $product->setCategory($category);
         $categories = $categoryService->getActive();
+        usort($categories, function ($a, $b) {
+            return strcmp(strtolower($a->getName()), strtolower($b->getName()));
+        });
         $productInfo = $productInformationService->getByProductId($product->getId());
         $reviews = $reviewService->getReviewsByProduct($product->getId());
         $ratingStats = $reviewService->getProductRatingStats($product->getId());
@@ -278,10 +292,20 @@ class Controller
             'product' => $productData,
             'reviews' => $reviewData,
             'rating'  => $ratingStats,
-            'categories' => $categories
+            'categories' => $categories,
+            "cart" => $cart
 
         ];
 
         return $this->renderer->render($response, $pageName,  $data);
+    }
+    public function viewCart($request, $response, $args)
+    {
+        $cart = $request->getAttribute('cart');
+        $data = [
+            "cart" => $cart
+        ];
+
+        return $this->renderer->render($response, "cart.php", $data);
     }
 }
