@@ -9,6 +9,7 @@ use App\Exceptions\DeleteException;
 use App\Exceptions\NotFoundException;
 use App\Exceptions\DuplicateException;
 use App\Repositories\Contracts\CartRepositoryInterface;
+use App\Repositories\Contracts\CategoryRepositoryInterface;
 use App\Repositories\Contracts\ProductRepositoryInterface;
 use App\Repositories\Contracts\UserRepositoryInterface;
 
@@ -17,17 +18,24 @@ class CartService
     private CartRepositoryInterface $repository;
     private UserRepositoryInterface $user_repository;
     private ProductRepositoryInterface $product_repository;
+    private CategoryRepositoryInterface $category_repository;
 
-    public function __construct(CartRepositoryInterface $repository, UserRepositoryInterface $user_repository, ProductRepositoryInterface $product_repository)
+    public function __construct(CartRepositoryInterface $repository, UserRepositoryInterface $user_repository, ProductRepositoryInterface $product_repository, CategoryRepositoryInterface $category_repository)
     {
         $this->repository = $repository;
         $this->user_repository = $user_repository;
         $this->product_repository = $product_repository;
+        $this->category_repository = $category_repository;
     }
 
     public function getAll()
     {
-        return $this->repository->findAll();
+        $cart = $this->repository->findAll();
+        foreach ($cart as $items) {
+            $items->setProduct($this->product_repository->findById($items->getProduct()->getId()));
+            $items->getProduct()->setCategory($this->category_repository->findById($items->getProduct()->getCategoryId()));
+        }
+        return $cart;
     }
 
     public function getCart($id)
@@ -36,12 +44,19 @@ class CartService
         if (!$cart) {
             throw new NotFoundException("The cart was not found or not exists");
         }
+        $cart->setProduct($this->product_repository->findById($cart->getProduct()->getId()));
+        $cart->getProduct()->setCategory($this->category_repository->findById($cart->getProduct()->getCategoryId()));
         return $cart;
     }
 
     public function getCartByUser($id)
     {
-        return $this->repository->findByUser($id);
+        $cart = $this->repository->findByUser($id);
+        foreach ($cart as $items) {
+            $items->setProduct($this->product_repository->findById($items->getProduct()->getId()));
+            $items->getProduct()->setCategory($this->category_repository->findById($items->getProduct()->getCategoryId()));
+        }
+        return $cart;
     }
 
     public function getCartForCurrentUser()
@@ -67,27 +82,25 @@ class CartService
         }
     }
 
-    public function save($rawCart)
+    public function save($cart)
     {
-        if ($this->user_repository->findById($rawCart["user_id"])) {
+        if (!$this->user_repository->findById($cart->getUserId())) {
             throw new NotFoundException("The user was not found or not exists");
         }
-        if ($this->product_repository->findById($rawCart["product_id"])) {
+        if (!$this->product_repository->findById($cart->getProduct()->getId())) {
             throw new NotFoundException("The user was not found or not exists");
         }
-
-        $cart = new Cart($rawCart);
 
         if (!$this->repository->insert($cart)) {
             throw new InsertException("Failed to insert cart with ID " . $cart->getId());
         }
         return $cart;
     }
-    public function update($rawCart)
+    public function update($cart)
     {
-        $cartDb = $this->getCart($rawCart["id"]);
+        $cartDb = $this->getCart($cart->getId());
 
-        $this->set($cartDb, $rawCart);
+        $this->set($cartDb, $cart);
 
         if (!$this->repository->update($cartDb)) {
             throw new UpdateException("Failed to update cart with ID " . $cartDb->getId());
@@ -95,20 +108,20 @@ class CartService
         return $cartDb;
     }
 
-    private function set($productDb, $rawProduct)
+    private function set($cartDb, $cart)
     {
         $allowedFields = ['user_id', 'product_id', 'quantity'];
 
         foreach ($allowedFields as $field) {
-            if (isset($rawProduct[$field])) {
+            if (isset($cart->$field)) {
                 $method = 'set' . str_replace(' ', '', ucwords(str_replace('_', ' ', $field)));
 
-                if (method_exists($productDb, $method)) {
-                    $productDb->$method($rawProduct[$field]);
+                if (method_exists($cartDb, $method)) {
+                    $cartDb->$method($cart->$field);
                 }
             }
         }
 
-        return $productDb;
+        return $cartDb;
     }
 }
