@@ -15,7 +15,7 @@ class CartRepository implements CartRepositoryInterface
         $rows = DatabaseHelper::query("SELECT * FROM cart_items");
         $carts = [];
         foreach ($rows as $cart) {
-            $carts[] = new Cart($cart);
+            $carts[] = new Cart($this->addProductKey($cart));
         }
         return $carts;
     }
@@ -23,7 +23,7 @@ class CartRepository implements CartRepositoryInterface
     public function findById(int $id): ?Cart
     {
         $data = DatabaseHelper::getDataPreparedQuery("SELECT * FROM cart_items WHERE id = ?", "i", $id);
-        return !empty($data) ? new Cart($data[0]) : null;
+        return !empty($data) ? new Cart($this->addProductKey($data[0])) : null;
     }
 
     public function findByUser(int $id): array
@@ -31,7 +31,7 @@ class CartRepository implements CartRepositoryInterface
         $data = DatabaseHelper::getDataPreparedQuery("SELECT * FROM cart_items WHERE user_id = ?", "i", $id);
         $carts = [];
         foreach ($data as $cart) {
-            $carts[] = new Cart($cart);
+            $carts[] = new Cart($this->addProductKey($cart));
         }
         return $carts;
     }
@@ -84,5 +84,14 @@ class CartRepository implements CartRepositoryInterface
     public function delete(int $id): bool
     {
         return DatabaseHelper::preparedQuery("DELETE FROM cart_items WHERE id = ?", "i", $id);
+    }
+
+    private function addProductKey(array $row): array
+    {
+        $row['product'] = [
+            'id' => $row['product_id']
+        ];
+
+        return $row;
     }
 }
