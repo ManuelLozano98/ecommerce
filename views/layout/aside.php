@@ -24,7 +24,7 @@ $user = $_SESSION["user"]["data"] ?? NULL;
 
             <?php if ($user): ?>
                 <div class="info">
-                    <a href="my-profile" class="d-block">
+                    <a href="<?php echo ROOT ?>/profile" class="d-block">
                         <?php echo $user->getUsername(); ?></a>
                 </div>
             <?php endif; ?>
