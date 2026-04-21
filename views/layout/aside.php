@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/../../config/constants.php';
-$user = $_SESSION["user"] ?? NULL;
+$user = $_SESSION["user"]["data"] ?? NULL;
 ?>
 <aside class="main-sidebar sidebar-dark-primary elevation-4">
     <!-- Brand Logo -->
