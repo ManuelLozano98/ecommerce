@@ -24,19 +24,19 @@
                     <span class="brand-text font-weight-light"><?php echo SITE ?></span>
                 </a>
                 <!-- Sidebar -->
-                <div class="sidebar">
+                <div class="sidebar vh-100 overflow-auto position-sticky top-0 p-3">
 
                     <!-- Sidebar Menu -->
                     <nav class="mt-2" id="menu">
                         <h4>Categories</h4>
                         <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
                             <?php
-                            foreach ($categories as $category): ?>
+                            foreach ($categories as $c): ?>
                                 <li class="nav-item">
-                                    <a href="<?php echo strtolower($category->getName()) ?>" class="nav-link">
-                                        <i class="nav-icon fa-solid fa-<?php echo lcfirst($category->getName()[0]); ?>"></i>
+                                    <a href="<?php echo $c->getSlug() ?>" class="nav-link">
+                                        <i class="nav-icon fa-solid fa-<?php echo lcfirst($c->getName()[0]); ?>"></i>
                                         <p>
-                                            <?php echo $category->getName() ?>
+                                            <?php echo $c->getName() ?>
                                         </p>
                                     </a>
                                 </li>
@@ -53,117 +53,115 @@
                 <!-- Content Header (Page header) -->
                 <section class="content-header">
                     <div class="container-fluid">
-                        <div class="row mb-2">
-                            <div class="col-sm-6">
-                                <h1>Products</h1>
-                            </div>
-                            <div class="col-sm-6">
-                                <ol class="breadcrumb float-sm-right">
-                                    <li class="breadcrumb-item"><a href="<?php echo ROOT ?>">Home</a></li>
-                                    <li class="breadcrumb-item active">
-                                        <?php echo $data['category']->getName(); ?>
-                                    </li>
-                                </ol>
-                            </div>
-                        </div>
-                    </div><!-- /.container-fluid -->
-                </section>
-                <section class="content">
-                    <div class="container-fluid">
                         <form id="filter-form">
-                            <div class="row mb-2">
+                            <div class="row align-items-center mb-3">
                                 <div class="col-12 col-md-6">
-                                    <h3>Search</h3>
+                                    <h1 class="fw-bold mb-2">Products</h1>
                                     <div id="search">
-                                        <input type="text" class="form-control search-form search-product" name="search" placeholder="Search any product" value="">
+                                        <input type="search" class="form-control search-form search-product rounded-pill ps-5" name="search" placeholder="Search any product" value="" aria-label="Search" />
+                                        <i class="fas fa-search search-icon"></i>
                                     </div>
                                 </div>
-                                <div class="col-12 col-md-6">
-                                    <h3>Filters</h3>
-                                    <div class="filters d-flex flex-wrap gap-2 align-items-center">
-                                        <!-- Advanced price filter -->
-                                        <div class="dropdown d-inline-block">
-                                            <button
-                                                class="px-3 py-2 rounded-pill text-nowrap bg-secondary border small fw-medium text-center dropdown-toggle text-white"
-                                                type="button"
-                                                data-toggle="dropdown"
-                                                aria-expanded="false">
-                                                Price
-                                            </button>
-                                            <ul class="dropdown-menu p-3" style="min-width: 220px;">
-                                                <input id="slider" type="text" name="range_price[]" value="">
-                                            </ul>
-                                        </div>
+                                <div class="col-sm-6">
+                                    <ol class="breadcrumb float-sm-right">
+                                        <li class="breadcrumb-item"><a href="<?php echo ROOT ?>">Home</a></li>
+                                        <li class="breadcrumb-item active">
+                                            <?php echo $data['category']->getName(); ?>
+                                        </li>
+                                    </ol>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <div class="filters d-flex flex-wrap gap-2 mb-3">
+                                    <!-- Advanced price filter -->
+                                    <div class="dropdown">
+                                        <button
+                                            class="btn btn-outline-dark rounded-pill dropdown-toggle"
+                                            type="button"
+                                            data-toggle="dropdown"
+                                            aria-expanded="false">
+                                            Price
+                                        </button>
+                                        <ul class="dropdown-menu p-3" style="min-width: 220px;">
+                                            <input id="slider" type="text" name="range_price[]" value="">
+                                        </ul>
+                                    </div>
 
-                                        <!-- Advanced review filter -->
-                                        <div class="dropdown d-inline-block">
-                                            <button
-                                                class="px-3 py-2 rounded-pill text-nowrap bg-secondary border small fw-medium text-center dropdown-toggle text-white"
-                                                type="button"
-                                                data-toggle="dropdown"
-                                                aria-expanded="false">
-                                                Score
-                                            </button>
-                                            <ul class="dropdown-menu p-3" style="min-width: 220px;">
-                                                <?php for ($i = 1; $i <= 5; $i++): ?>
-                                                    <li>
-                                                        <div class="form-check">
-                                                            <input class="custom-control-input custom-control-input-secondary custom-control-input-outline" type="checkbox" name="scores[]" value="<?php echo $i ?>" id="review<?php echo $i ?>">
-                                                            <label for="review<?php echo $i ?>" class="custom-control-label font-weight-normal"> <?php echo $i ?> stars</label>
-                                                        </div>
-                                                    </li>
-                                                <?php endfor; ?>
-                                            </ul>
-                                        </div>
+                                    <!-- Advanced review filter -->
+                                    <div class="dropdown">
+                                        <button
+                                            class="btn btn-outline-dark rounded-pill dropdown-toggle"
+                                            type="button"
+                                            data-toggle="dropdown"
+                                            aria-expanded="false">
+                                            Score
+                                        </button>
+                                        <ul class="dropdown-menu p-3" style="min-width: 220px;">
+                                            <?php for ($i = 1; $i <= 5; $i++): ?>
+                                                <li>
+                                                    <div class="form-check">
+                                                        <input class="custom-control-input custom-control-input-secondary custom-control-input-outline" type="checkbox" name="scores[]" value="<?php echo $i ?>" id="review<?php echo $i ?>">
+                                                        <label for="review<?php echo $i ?>" class="custom-control-label font-weight-normal"> <?php echo $i ?> stars</label>
+                                                    </div>
+                                                </li>
+                                            <?php endfor; ?>
+                                        </ul>
+                                    </div>
 
-                                        <input type="hidden" name="sort" id="sort-input">
+                                    <input type="hidden" name="sort" id="sort-input">
 
-                                        <!-- Lowest price filter -->
-                                        <div class="d-inline-block">
-                                            <button id="lowest-price-filter" class="px-3 py-2 rounded-pill text-nowrap bg-secondary border small fw-medium text-center sort-btn" data-sort="price_asc" style="cursor: pointer;" value="">Lowest price</button>
-                                        </div>
+                                    <!-- Lowest price filter -->
+                                    <div>
+                                        <button id="lowest-price-filter" class="btn btn-outline-primary rounded-pill sort-btn" data-sort="price_asc" style="cursor: pointer;" value=""><i class="fas fa-arrow-down"></i> Lowest price</button>
+                                    </div>
 
-                                        <!-- Higher price filter -->
-                                        <div class="d-inline-block">
-                                            <button id="higher-price-filter" class="px-3 py-2 rounded-pill text-nowrap bg-secondary border small fw-medium text-center sort-btn" data-sort="price_desc" style="cursor: pointer;">Higher price</button>
-                                        </div>
+                                    <!-- Highest price filter -->
+                                    <div>
+                                        <button id="higher-price-filter" class="btn btn-outline-primary rounded-pill sort-btn" data-sort="price_desc" style="cursor: pointer;"><i class="fas fa-arrow-up"></i> Highest price</button>
+                                    </div>
 
-                                        <!-- Top rated filter -->
-                                        <div class="d-inline-block">
-                                            <button id="top-rated-filter" class="px-3 py-2 rounded-pill text-nowrap bg-secondary border small fw-medium text-center sort-btn" data-sort="top_rated" style="cursor: pointer;">Top rated</button>
-                                        </div>
+                                    <!-- Top rated filter -->
+                                    <div>
+                                        <button id="top-rated-filter" class="btn btn-outline-warning rounded-pill sort-btn" data-sort="top_rated" style="cursor: pointer;"><i class="fas fa-star"></i> Top rated</button>
+                                    </div>
 
-                                        <!-- Top sellers filter -->
-                                        <div class="d-inline-block">
-                                            <button id="top-sellers-filter" class="px-3 py-2 rounded-pill text-nowrap bg-secondary border small fw-medium text-center sort-btn" data-sort="top_sellers" style="cursor: pointer;">Top sellers</button>
-                                        </div>
-
-                                        <!-- Reset button -->
-                                        <div class="d-inline-block float-right">
-                                            <button id="reset" class="px-3 py-2 text-nowrap bg-black border small fw-medium text-center" style="cursor: pointer;">Reset</button>
-                                        </div>
+                                    <!-- Top sellers filter -->
+                                    <div>
+                                        <button id="top-sellers-filter" class="btn btn-outline-success rounded-pill sort-btn" data-sort="top_sellers" style="cursor: pointer;"><i class="far fa-heart"></i> Top sellers</button>
+                                    </div>
+                                    <!-- Reset button -->
+                                    <div>
+                                        <button id="reset" class="btn btn-outline-secondary rounded-pill"></i>
+                                            Reset
+                                        </button>
                                     </div>
                                 </div>
+                            </div>
                         </form>
-                    </div><!-- /.container-fluid -->
+                    </div>
                 </section>
                 <section class="main-content">
-                    <div class="row" id="content-products">
-                        <?php foreach ($products as $product): ?>
-                            <div class="col-12 col-sm-6 col-md-4 col-lg-3 mb-4" id="products">
-                                <div class="product-card w-75 h-100">
-                                    <a href="<?php echo ROOT . "/" . strtolower($product->getCategory()->getName()) . "/" . $product->getSlug() ?>" class="product-link">
-                                        <div class="card-header h-20 bg-light">
-                                            <?php if ($product->getImage()) : ?>
-                                                <img src="<?php echo UPLOADS_IMAGES . '/' . $product->getImage() ?>"
-                                                    alt="<?php echo $product->getName() ?>" class="card-img-center h-100 w-100">
-                                            <?php endif; ?>
-                                        </div>
-                                        <div class="product-header">
-                                            <div class="product-price">
-                                                <span><?php echo $product->getPrice() ?>€</span>
+                    <div class="container-fluid">
+                        <div class="row" id="content-products" data-category="<?php echo $category->getId() ?>">
+                            <?php foreach ($products as $product): ?>
+                                <div class="col-6 col-md-4 col-lg-3 col-xl-2 mb-4">
+                                    <div class="card h-100 shadow-sm border-0">
+                                        <a href="<?php echo ROOT . "/" . $product->getCategory()->getSlug() . "/" . $product->getSlug() ?>">
+                                            <div class="ratio ratio-1x1 bg-light">
+                                                <?php if ($product->getImage()) : ?>
+                                                    <img src="<?php echo UPLOADS_IMAGES . '/' . $product->getImage() ?>"
+                                                        alt="<?php echo $product->getName() ?>" class="card-img-center h-100 w-100">
+                                                <?php endif; ?>
                                             </div>
-                                            <div class="ratings">
+                                        </a>
+                                        <div class="card-body d-flex flex-column">
+                                            <!-- PRICE -->
+                                            <h5 class="fw-bold mb-1">
+                                                <?php echo $product->getPrice() ?>€
+                                            </h5>
+
+                                            <!-- RATING -->
+                                            <div class="text-warning mb-1">
                                                 <span class="stars">
                                                     <?php
                                                     $averageRating = $reviews[$product->getId()]['average'];
@@ -178,16 +176,23 @@
                                                     }
                                                     ?>
                                                 </span>
-                                                <span class="reviews-count"><?php echo $reviews[$product->getId()]['total'] ?> reviews</span>
+                                                <span class="text-muted small">
+                                                    (<?php echo $reviews[$product->getId()]['total'] ?>)
+                                                </span>
                                             </div>
+                                            <p class="card-text text-muted flex-grow-1">
+                                                <?php echo $product->getName() ?>
+                                            </p>
+
+                                            <a href="<?php echo ROOT . "/" . $product->getCategory()->getSlug() . "/" . $product->getSlug() ?>"
+                                                class="btn btn-dark w-100 btn-sm rounded-pill">
+                                                View product
+                                            </a>
                                         </div>
-                                        <div class="card-body bg-white">
-                                            <div class="product-title"><?php echo $product->getName() ?></div>
-                                        </div>
-                                    </a>
+                                    </div>
                                 </div>
-                            </div>
-                        <?php endforeach; ?>
+                            <?php endforeach; ?>
+                        </div>
                     </div>
                 </section>
                 <section class="pagination-content">

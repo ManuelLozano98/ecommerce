@@ -35,29 +35,35 @@ $(document).ready(() => {
     const currentSort = params.get("sort");
     if (currentSort) {
       sortInput.value = currentSort;
-
-      sortButtons.forEach((btn) => {
-        btn.classList.remove("bg-primary");
-        btn.classList.add("bg-secondary");
-
-        if (btn.dataset.sort === currentSort) {
-          btn.classList.remove("bg-secondary");
-          btn.classList.add("bg-primary");
+      for (let i = 0; i < sortButtons.length; i++) {
+        if (sortButtons.item(i).getAttribute("data-sort") === currentSort) {
+          const outlineClass = [...sortButtons.item(i).classList].find((c) =>
+            c.startsWith("btn-outline-"),
+          );
+          if (outlineClass) {
+            const color = outlineClass.replace("btn-outline-", "");
+            sortButtons.item(i).classList.remove(outlineClass);
+            sortButtons.item(i).classList.add(`bg-${color}`);
+          }
         }
-      });
+      }
     }
-    advancedFilters.forEach((btn) => {
-      btn.classList.remove("bg-primary");
-      btn.classList.add("bg-secondary");
-    });
 
     if (params.get("range_price[]")) {
-      advancedFilters[0].classList.remove("bg-secondary");
-      advancedFilters[0].classList.add("bg-primary");
+      advancedFilters[0].classList.remove("btn-outline-dark");
+      advancedFilters[0].classList.add("bg-dark");
     }
     if (params.get("scores[]")) {
-      advancedFilters[1].classList.remove("bg-secondary");
-      advancedFilters[1].classList.add("bg-primary");
+      advancedFilters[1].classList.remove("btn-outline-dark");
+      advancedFilters[1].classList.add("bg-dark");
+    }
+    if (params.get("range_price[]")) {
+      let sliderVal = params.get("range_price[]").split(";");
+      const slider = $("#slider").data("ionRangeSlider");
+      slider.update({
+        from: parseInt(sliderVal[0]),
+        to: parseFloat(sliderVal[1]),
+      });
     }
   }
 
@@ -66,7 +72,9 @@ $(document).ready(() => {
     const slider = $("#slider").data("ionRangeSlider");
     if (slider) {
       const defaultFrom = 0;
-      const defaultTo = 5000;
+      const defaultTo = parseInt(
+        $("#slider").data("ionRangeSlider").options.max,
+      );
       if (slider.result.from == defaultFrom && slider.result.to == defaultTo) {
         formData.delete("range_price[]");
       }
@@ -91,13 +99,17 @@ $(document).ready(() => {
       ? `${window.location.pathname}?${query}`
       : window.location.pathname;
 
-    if (pushState) {
+    if (
+      pushState &&
+      newUrl !== window.location.pathname + window.location.search
+    ) {
       history.pushState({}, "", newUrl);
     }
 
     fetch(newUrl, {
       headers: {
         "X-Requested-With": "XMLHttpRequest",
+        Accept: "application/json",
       },
     })
       .then((res) => res.json())
@@ -123,6 +135,7 @@ $(document).ready(() => {
 
     data.products.forEach((product) => {
       let starsHTML = "";
+      let html = "";
 
       const avg = parseFloat(product.average) || 0;
 
@@ -139,42 +152,63 @@ $(document).ready(() => {
       const imageHTML = product.image
         ? `<img src="/Ecommerce/uploads/images/${product.image}"
               alt="${product.name}"
-              class="card-img-center h-100 w-100">`
+              class="card-img-top object-fit-cover">`
         : "";
 
-      productsContainer.innerHTML += `
-      <div class="col-sm-3">
-        <div class="product-card w-75 h-100">
-          <a href="/Ecommerce/${product.category.toLowerCase()}/${product.slug}" class="product-link">
-            <div class="card-header h-20 bg-light">
-              ${imageHTML}
-            </div>
-
-            <div class="product-header">
-              <div class="product-price">
-                <span>${product.price}€</span>
+      html = `
+      <div class="col-6 col-md-4 col-lg-3 col-xl-2 mb-4">
+          <div class="card h-100 shadow-sm border-0">                          
+            <a href="/Ecommerce/${product.category.toLowerCase()}/${product.slug}">
+              <div class="ratio ratio-1x1 bg-light">
+                  ${imageHTML}
               </div>
-
-              <div class="ratings">
-                <span class="stars">
-                  ${starsHTML}
-                </span>
-                <span class="reviews-count">
-                  ${data.reviews[product.id].total || 0} reviews
-                </span>
+            </a>
+            <div class="card-body d-flex flex-column">
+               <h5 class="fw-bold mb-1">
+                  ${product.price}€
+                </h5>
+                <div class="text-warning mb-1">
+                  <span class="stars">
+                    ${starsHTML}
+                   </span>                           
+                  <span class="text-muted small">
+                    (${data.reviews[product.id].total || 0})
+                  </span>
+                </div>
+               <p class="card-text text-muted flex-grow-1">
+                  ${product.name}
+                </p>
+                <a href="/Ecommerce/${product.category.toLowerCase()}/${product.slug}" class="btn btn-dark w-100 btn-sm rounded-pill">
+                  View product
+                </a>
               </div>
             </div>
-
-            <div class="card-body bg-white">
-              <div class="product-title">
-                ${product.name}
-              </div>
-            </div>
-          </a>
-        </div>
-      </div>
+          </div>
     `;
+      productsContainer.innerHTML += html;
     });
+  }
+
+  function loadProductsFromURL() {
+    const url = window.location.href;
+
+    fetch(url, {
+      headers: {
+        "X-Requested-With": "XMLHttpRequest",
+        Accept: "application/json",
+      },
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        renderProducts(data);
+        renderPagination(
+          data.totalPages,
+          data.currentPage,
+          data.totalProducts,
+          data.records,
+        );
+      })
+      .catch(console.error);
   }
 
   function renderPagination(totalPages, currentPage, totalProducts, records) {
@@ -243,12 +277,22 @@ $(document).ready(() => {
       sortInput.value = this.dataset.sort;
 
       sortButtons.forEach((btn) => {
-        btn.classList.remove("bg-primary");
-        btn.classList.add("bg-secondary");
+        const bgClass = [...btn.classList].find((c) => c.startsWith("bg-"));
+        if (bgClass) {
+          const color = bgClass.replace("bg-", "");
+          btn.classList.remove(bgClass);
+          btn.classList.add(`btn-outline-${color}`);
+        }
       });
 
-      this.classList.remove("bg-secondary");
-      this.classList.add("bg-primary");
+      const outlineClass = [...this.classList].find((c) =>
+        c.startsWith("btn-outline-"),
+      );
+      if (outlineClass) {
+        const color = outlineClass.replace("btn-outline-", "");
+        this.classList.remove(outlineClass);
+        this.classList.add(`bg-${color}`);
+      }
 
       loadProducts(1);
     });
@@ -285,7 +329,6 @@ $(document).ready(() => {
   setupIonSlider();
   focusDropdown();
   syncUIFromURL();
-  loadProducts(page, false);
 });
 
 function focusDropdown() {
@@ -295,6 +338,8 @@ function focusDropdown() {
 }
 
 function setupIonSlider() {
+  const el = document.querySelector("[data-category]");
+  const category = el.getAttribute("data-category");
   /* ION SLIDER */
   $("#slider").ionRangeSlider({
     min: 0,
@@ -307,6 +352,22 @@ function setupIonSlider() {
     prettify: false,
     hasGrid: true,
   });
+
+  $slider = $("#slider").data("ionRangeSlider");
+
+  fetch(`api/products?sort=price_desc&categories[]=${category}&limit=1`, {
+    headers: {
+      "X-Requested-With": "XMLHttpRequest",
+      Accept: "application/json",
+    },
+  })
+    .then((res) => res.json())
+    .then((data) => {
+      $slider.update({
+        max: parseFloat(data.data[0].price),
+      });
+    })
+    .catch((err) => console.error(err));
 }
 
 function debounce(func, delay) {
