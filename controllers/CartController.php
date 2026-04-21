@@ -65,7 +65,7 @@ class CartController
                 $userCartItems = $this->cartService->getCartByUser($id);
                 $userCart = [];
                 foreach ($userCartItems as $item) {
-                    $userCart[$item->getProductId()] = $item;
+                    $userCart[$item->getProduct()->getId()] = $item;
                 }
 
                 foreach ($sessionCart as $productId => $sessionItem) {
@@ -77,6 +77,7 @@ class CartController
                         $this->cartService->update($existingItem);
                     } else {
                         $cartItem = new Cart($data);
+                        $cartItem->setUserId($id);
                         $this->cartService->save($cartItem);
                     }
                 }
