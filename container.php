@@ -5,6 +5,8 @@ use App\Repositories\Contracts\CartRepositoryInterface;
 use App\Repositories\Contracts\UserRepositoryInterface;
 use App\Repositories\Contracts\ProductRepositoryInterface;
 use App\Repositories\CartRepository;
+use App\Repositories\CategoryRepository;
+use App\Repositories\Contracts\CategoryRepositoryInterface;
 use App\Repositories\Contracts\RoleRepositoryInterface;
 use App\Repositories\Contracts\UserRoleRepositoryInterface;
 use App\Repositories\UserRepository;
@@ -24,6 +26,7 @@ $container->set(UserRepositoryInterface::class, DI\autowire(UserRepository::clas
 $container->set(ProductRepositoryInterface::class, DI\autowire(ProductRepository::class));
 $container->set(UserService::class, DI\autowire());
 $container->set(UserRoleService::class, DI\autowire());
+$container->set(CategoryRepositoryInterface::class, DI\autowire(CategoryRepository::class));
 $container->set(PhpRenderer::class, function () {
     return new PhpRenderer(__DIR__ . '/views/');
 });
