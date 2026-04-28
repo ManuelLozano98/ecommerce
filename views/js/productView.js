@@ -2,11 +2,17 @@ const BASE_URL = "/Ecommerce";
 
 $(document).ready(function () {
   changeImage();
+  const product = JSON.parse(
+    document.querySelector(".btn-cart").dataset.product,
+  );
   $(".btn-cart").on("click", function () {
     const productId = parseInt(this.dataset.id);
-    const product = JSON.parse(this.dataset.product);
     addToCart(productId, product);
   });
+  $("#checkout").on("click", function () {
+    checkout(product);
+  });
+  disableProductOutOfStock(product);
 });
 
 function changeImage() {
@@ -44,4 +50,35 @@ function addToCart(id, p) {
       }
     })
     .catch((err) => console.error(err));
+}
+
+function checkout(product) {
+  const qty = getById("quantity").value;
+  product.quantity = qty;
+  product.checkout_type = "buy_now";
+  fetch(`${BASE_URL}/checkout`, {
+    headers: {
+      "X-Requested-With": "XMLHttpRequest",
+      Accept: "application/json",
+    },
+    method: "POST",
+    body: JSON.stringify([product]),
+  })
+    .then((res) => res.json())
+    .then((data) => {
+      if (data.message) {
+        notifyErrorResponse(data);
+      }
+      if (data.clientSecret) {
+        location.href = `${BASE_URL}/checkout?client=${data.clientSecret}`;
+      }
+    })
+    .catch((err) => console.error(err));
+}
+
+function disableProductOutOfStock(product) {
+  if (product.stock <= 0) {
+    getById("checkout").disabled = true;
+    document.querySelector(".btn-cart").disabled = true;
+  }
 }

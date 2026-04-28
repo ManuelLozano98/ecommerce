@@ -269,18 +269,21 @@
 
                                                 <div class="form-group">
                                                     <label>Quantity:</label>
-                                                    <input type="number"
+                                                    <input id="quantity" type="number"
                                                         value="1"
                                                         min="1"
-                                                        max="<?php echo $stock ?>"
+                                                        max="<?php if ($stock > 0) {
+                                                                    echo $stock;
+                                                                } ?>"
                                                         class="form-control">
                                                 </div>
 
-                                                <button class="btn btn-cart fas fa-cart-plus btn-block mb-2 font-weight-bold" data-id="<?php echo $product->getId() ?>" data-product='<?php echo htmlspecialchars(json_encode($product), ENT_QUOTES, 'UTF-8') ?>'>
+                                                <button class="btn btn-cart fas fa-cart-plus btn-block mb-2 font-weight-bold" data-id="<?php echo $product->getId() ?>" data-product='<?php $product->setPrice($total);
+                                                                                                                                                                                        echo htmlspecialchars(json_encode($product), ENT_QUOTES, 'UTF-8') ?>'>
                                                     Add to Cart
                                                 </button>
 
-                                                <button class="btn btn-buy btn-block">
+                                                <button class="btn btn-buy btn-block" id="checkout">
                                                     Buy Now
                                                 </button>
 
