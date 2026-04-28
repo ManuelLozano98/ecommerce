@@ -3,8 +3,6 @@
 namespace App\Controllers;
 
 use App\Models\Cart;
-use App\Repositories\CategoryRepository;
-use App\Repositories\ProductRepository;
 use Slim\Views\PhpRenderer;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -16,11 +14,13 @@ class CartController
     private string $pageName = "cart.php";
     private $renderer;
     private CartService $cartService;
+    private CategoryService $categoryService;
 
-    public function __construct(PhpRenderer $renderer, CartService $cartService)
+    public function __construct(PhpRenderer $renderer, CartService $cartService, CategoryService $categoryService)
     {
         $this->renderer = $renderer;
         $this->cartService = $cartService;
+        $this->categoryService = $categoryService;
     }
     public function index($request, $response, $args)
     {
@@ -39,9 +39,6 @@ class CartController
             if (!isset($_SESSION["cart"])) {
                 $_SESSION['cart'] = [];
             }
-            $categoryRepo = new CategoryRepository();
-            $productRepo = new ProductRepository();
-            $categoryService = new CategoryService($categoryRepo, $productRepo);
             $cartItem = new Cart($data);
             $product = $cartItem->getProduct();
             $productId = $product->getId();
@@ -50,7 +47,7 @@ class CartController
                 throw new \Exception('Invalid product');
             }
 
-            $product->setCategory($categoryService->getCategory($product->getId()));
+            $product->setCategory($this->categoryService->getCategory($product->getId()));
             if (!isset($_SESSION['cart'][$productId])) {
                 $_SESSION['cart'][$productId] = $cartItem;
             } else {

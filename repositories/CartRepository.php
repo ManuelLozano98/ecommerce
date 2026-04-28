@@ -86,6 +86,11 @@ class CartRepository implements CartRepositoryInterface
         return DatabaseHelper::preparedQuery("DELETE FROM cart_items WHERE id = ?", "i", $id);
     }
 
+    public function deleteUserCart(int $userId): bool
+    {
+        return DatabaseHelper::preparedQuery("DELETE FROM cart_items WHERE user_id = ?", "i", $userId);
+    }
+
     private function addProductKey(array $row): array
     {
         $row['product'] = [
