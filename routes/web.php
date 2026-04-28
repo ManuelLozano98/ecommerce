@@ -13,6 +13,7 @@ use App\Controllers\Controller;
 use App\Controllers\ProductImageController;
 use App\Controllers\ProductInformationController;
 use App\Controllers\CartController;
+use App\Controllers\StripeController;
 use App\Middleware\AdminMiddleware;
 use App\Middleware\AuthMiddleware;
 use App\Middleware\CartMiddleware;
@@ -31,10 +32,15 @@ return function (App $app) {
     $app->get('/my-cart/', Controller::class . ':viewCart')->add(CartMiddleware::class);
     $app->get('/login/', UserController::class . ':indexLogin');
     $app->get('/logout/', UserController::class . ':logout')->add(AuthMiddleware::class);
-    $app->get('/admin/', UserController::class . ':indexAdmin')->add(AdminMiddleware::class)->add(CartMiddleware::class);;
+    $app->get('/admin/', UserController::class . ':indexAdmin')->add(AdminMiddleware::class)->add(CartMiddleware::class);
+    $app->get('/checkout/', Controller::class . ':indexCheckout');
+    $app->get('/checkoutReturn/', Controller::class . ':indexCheckoutReturn');
 
     $app->post('/cart/', CartController::class . ':add');
     $app->post('/login/', UserController::class . ':login');
+    $app->post('/checkout/', StripeController::class . ':checkout');
+    $app->post('/checkout-status/', StripeController::class . ':checkCheckout');
+    $app->post('/webhook/stripe/', StripeController::class . ':processOrderWebhook');
 
     $app->get('/{category:[a-z0-9-]+}/{slug:[a-z0-9-]+}/', Controller::class . ':viewProduct')->add(CartMiddleware::class);
     $app->get('/{category:[a-z0-9-]+}/',  Controller::class . ':viewCategoryProducts')->add(CartMiddleware::class);
