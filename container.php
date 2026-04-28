@@ -16,8 +16,28 @@ use App\Repositories\UserRoleRepository;
 use App\Services\CartService;
 use App\Services\UserRoleService;
 use App\Services\UserService;
+use App\Services\StripeService;
 use Slim\Views\PhpRenderer;
-
+use Stripe\StripeClient;
+use App\Config\Env;
+use App\Repositories\Contracts\ProductImageRepositoryInterface;
+use App\Repositories\Contracts\ProductInformationRepositoryInterface;
+use App\Repositories\Contracts\ReviewRepositoryInterface;
+use App\Repositories\Contracts\SaleItemRepositoryInterface;
+use App\Repositories\Contracts\SaleRepositoryInterface;
+use App\Repositories\ProductImageRepository;
+use App\Repositories\ProductInformationRepository;
+use App\Repositories\ReviewRepository;
+use App\Repositories\SaleItemRepository;
+use App\Repositories\SaleRepository;
+use App\Services\CategoryService;
+use App\Services\MailService;
+use App\Services\ProductImageService;
+use App\Services\ProductInformationService;
+use App\Services\ProductService;
+use App\Services\ReviewService;
+use App\Services\SaleItemService;
+use App\Services\SaleService;
 
 $container = new Container();
 
@@ -34,4 +54,21 @@ $container->set(RoleRepositoryInterface::class, DI\autowire(RoleRepository::clas
 $container->set(UserRoleRepositoryInterface::class, DI\autowire(UserRoleRepository::class));
 $container->set(UserRoleService::class, DI\autowire());
 $container->set(CartService::class, DI\autowire());
+$container->set(CategoryService::class, Di\autowire());
+$container->set(ProductService::class, Di\autowire());
+$container->set(ReviewRepositoryInterface::class, Di\autowire(ReviewRepository::class));
+$container->set(ReviewService::class, Di\autowire());
+$container->set(ProductImageRepositoryInterface::class, Di\autowire(ProductImageRepository::class));
+$container->set(ProductImageService::class, Di\autowire());
+$container->set(ProductInformationRepositoryInterface::class, Di\autowire(ProductInformationRepository::class));
+$container->set(ProductInformationService::class, Di\autowire());
+$container->set(SaleRepositoryInterface::class, Di\autowire(SaleRepository::class));
+$container->set(SaleItemRepositoryInterface::class, Di\autowire(SaleItemRepository::class));
+$container->set(SaleItemService::class, Di\autowire());
+$container->set(SaleService::class, Di\autowire());
+$container->set(MailService::class, Di\autowire());
+$container->set(StripeClient::class, function () {
+    return new StripeClient(Env::get("STRIPE_SECRET"));
+});
+$container->set(StripeService::class,  DI\autowire());
 return $container;
