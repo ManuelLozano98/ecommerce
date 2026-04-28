@@ -8,24 +8,37 @@ use Slim\Views\PhpRenderer;
 use App\Services\CategoryService;
 use App\Services\ReviewService;
 use App\Services\ProductService;
-use App\Repositories\CategoryRepository;
-use App\Repositories\ProductRepository;
-use App\Repositories\ReviewRepository;
-use App\Repositories\UserRepository;
-use App\Exceptions\NotFoundException;
-use App\Repositories\ProductImageRepository;
-use App\Repositories\ProductInformationRepository;
 use App\Services\ProductImageService;
 use App\Services\ProductInformationService;
 use App\Services\UserService;
 
 class Controller
 {
-    private $renderer;
+    private PhpRenderer $renderer;
+    private CategoryService $categoryService;
+    private ProductService $productService;
+    private ReviewService $reviewService;
+    private ProductImageService $productImageService;
+    private UserService $userService;
+    private ProductInformationService $productInformationService;
 
-    public function __construct(PhpRenderer $renderer)
-    {
+
+    public function __construct(
+        PhpRenderer $renderer,
+        CategoryService $categoryService,
+        ProductService $productService,
+        ReviewService $reviewService,
+        UserService $userService,
+        ProductImageService $productImageService,
+        ProductInformationService $productInformationService
+    ) {
         $this->renderer = $renderer;
+        $this->categoryService = $categoryService;
+        $this->productService = $productService;
+        $this->reviewService = $reviewService;
+        $this->userService = $userService;
+        $this->productImageService = $productImageService;
+        $this->productInformationService = $productInformationService;
     }
     public function index($request, $response, $args)
     {
@@ -51,16 +64,7 @@ class Controller
         ];
 
 
-        $categoryRepository = new CategoryRepository();
-        $productRepository = new ProductRepository();
-        $userRepository = new UserRepository();
-        $reviewRepository = new ReviewRepository();
-
-        $categoryService = new CategoryService($categoryRepository, $productRepository);
-        $productService = new ProductService($productRepository, $categoryRepository);
-        $reviewService = new ReviewService($reviewRepository, $userRepository, $productRepository);
-
-        $categories = $categoryService->getActive();
+        $categories = $this->categoryService->getActive();
         usort($categories, function ($a, $b) {
             return strcmp(strtolower($a->getName()), strtolower($b->getName()));
         });
@@ -69,17 +73,21 @@ class Controller
         $isAjax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === "xmlhttprequest";
 
         if ($isAjax) {
-
-            $products = $productService->getProductsRawFiltered($filters, $itemsPerPage, $offset);
-            $total = $productService->countFiltered($filters);
+            $productsWithDiscount = $this->productInformationService->getWithDiscount();
+            $products = $this->productService->getProductsRawFiltered($filters, $itemsPerPage, $offset);
+            $total = $this->productService->countFiltered($filters);
 
             $productData = [];
 
             foreach ($products as $row) {
+                foreach ($productsWithDiscount as $productDiscount) {
+                    if ($productDiscount->getProductId() === $row['id']) {
+                        $row['price'] = round($row['price'] * (1 - $productDiscount->getDiscount() / 100), 2);
+                    }
+                }
+                $category = $this->categoryService->getCategory($row['category_id']);
 
-                $category = $categoryService->getCategory($row['category_id']);
-
-                $ratingStats = $reviewService->getProductRatingStats($row['id']);
+                $ratingStats = $this->reviewService->getProductRatingStats($row['id']);
                 $reviewPerProduct[$row['id']] = $ratingStats;
 
                 $productData[] = [
@@ -107,14 +115,20 @@ class Controller
             return $response->withHeader('Content-Type', 'application/json');
         }
 
-        $products = $productService->getProductsFiltered($filters, $itemsPerPage, $offset);
-        $total = $productService->countFiltered($filters);
+        $productsWithDiscount = $this->productInformationService->getWithDiscount();
+        $products = $this->productService->getProductsFiltered($filters, $itemsPerPage, $offset);
+        $total = $this->productService->countFiltered($filters);
         $totalPages = ceil($total / $itemsPerPage);
 
         foreach ($products as $product) {
-            $ratingStats = $reviewService->getProductRatingStats($product->getId());
+            foreach ($productsWithDiscount as $productDiscount) {
+                if ($productDiscount->getProductId() === $product->getId()) {
+                    $product->setPrice(round($product->getPrice() * (1 - $productDiscount->getDiscount() / 100), 2));
+                }
+            }
+            $ratingStats = $this->reviewService->getProductRatingStats($product->getId());
             $reviewPerProduct[$product->getId()] = $ratingStats;
-            $product->setCategory($categoryService->getCategoryByProduct($product));
+            $product->setCategory($this->categoryService->getCategoryByProduct($product));
         }
 
 
@@ -135,10 +149,7 @@ class Controller
     public function viewCategoryProducts($request, $response, $args)
     {
         $categoryURL = $args['category'];
-        $categoryRepository = new CategoryRepository();
-        $productRepository = new ProductRepository();
-        $categoryService = new CategoryService($categoryRepository, $productRepository);
-        $category = $categoryService->getCategoryBySlug($categoryURL);
+        $category = $this->categoryService->getCategoryBySlug($categoryURL);
         if (!$category) {
             return $this->renderer->render($response, "404.php");
         }
@@ -162,11 +173,7 @@ class Controller
             'sort' => $sort
         ];
 
-        $userRepository = new UserRepository();
-        $reviewRepository = new ReviewRepository();
-        $productService = new ProductService($productRepository, $categoryRepository);
-        $reviewService = new ReviewService($reviewRepository, $userRepository, $productRepository);
-        $categories = $categoryService->getActive();
+        $categories =  $this->categoryService->getActive();
         usort($categories, function ($a, $b) {
             return strcmp(strtolower($a->getName()), strtolower($b->getName()));
         });
@@ -175,17 +182,22 @@ class Controller
         $isAjax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === "xmlhttprequest";
 
         if ($isAjax) {
-
-            $products = $productService->getProductsRawFiltered($filters, $itemsPerPage, $offset);
-            $total = $productService->countFiltered($filters);
+            $productsWithDiscount = $this->productInformationService->getWithDiscount();
+            $products =  $this->productService->getProductsRawFiltered($filters, $itemsPerPage, $offset);
+            $total =  $this->productService->countFiltered($filters);
 
             $productData = [];
 
             foreach ($products as $row) {
+                foreach ($productsWithDiscount as $productDiscount) {
+                    if ($productDiscount->getProductId() === $row['id']) {
+                        $row['price'] = round($row['price'] * (1 - $productDiscount->getDiscount() / 100), 2);
+                    }
+                }
 
-                $productCategory = $categoryService->getCategory($row['category_id']);
+                $productCategory =  $this->categoryService->getCategory($row['category_id']);
 
-                $ratingStats = $reviewService->getProductRatingStats($row['id']);
+                $ratingStats =  $this->reviewService->getProductRatingStats($row['id']);
                 $reviewPerProduct[$row['id']] = $ratingStats;
 
                 $productData[] = [
@@ -212,15 +224,20 @@ class Controller
 
             return $response->withHeader('Content-Type', 'application/json');
         }
-
-        $products = $productService->getProductsFiltered($filters, $itemsPerPage, $offset);
-        $total = $productService->countFiltered($filters);
+        $productsWithDiscount = $this->productInformationService->getWithDiscount();
+        $products =  $this->productService->getProductsFiltered($filters, $itemsPerPage, $offset);
+        $total =  $this->productService->countFiltered($filters);
         $totalPages = ceil($total / $itemsPerPage);
 
         foreach ($products as $product) {
-            $ratingStats = $reviewService->getProductRatingStats($product->getId());
+            foreach ($productsWithDiscount as $productDiscount) {
+                if ($productDiscount->getProductId() === $product->getId()) {
+                    $product->setPrice(round($product->getPrice() * (1 - $productDiscount->getDiscount() / 100), 2));
+                }
+            }
+            $ratingStats =  $this->reviewService->getProductRatingStats($product->getId());
             $reviewPerProduct[$product->getId()] = $ratingStats;
-            $product->setCategory($categoryService->getCategoryByProduct($product));
+            $product->setCategory($this->categoryService->getCategoryByProduct($product));
         }
 
 
@@ -243,16 +260,12 @@ class Controller
     {
         $category = $args["category"];
         $productSlug = $args["slug"];
-        $productRepository = new ProductRepository();
-        $categoryRepository = new CategoryRepository();
-        $categoryService = new CategoryService($categoryRepository, $productRepository);
-        $productService = new ProductService($productRepository, $categoryRepository);
-        $category = $categoryService->getCategoryBySlug($category);
+        $category = $this->categoryService->getCategoryBySlug($category);
         if (!$category) {
             return $this->renderer->render($response, "404.php");
         }
 
-        $product = $productService->getProductBySlug($productSlug);
+        $product = $this->productService->getProductBySlug($productSlug);
         if (!$product) {
             return $this->renderer->render($response, "404.php");
         }
@@ -261,25 +274,17 @@ class Controller
         $data = [];
         $reviewData = [];
         $pageName = "product.php";
-        $userRepository = new UserRepository();
-        $reviewRepository = new ReviewRepository();
-        $productImageRepository = new ProductImageRepository();
-        $productInformationRepository = new ProductInformationRepository();
-        $reviewService = new ReviewService($reviewRepository, $userRepository, $productRepository);
-        $userService = new UserService($userRepository);
-        $productImageService = new ProductImageService($productImageRepository, $productRepository);
-        $productInformationService = new ProductInformationService($productInformationRepository, $productRepository);
-        $images = $productImageService->getByProductId($product->getId());
+        $images = $this->productImageService->getByProductId($product->getId());
         $product->setCategory($category);
-        $categories = $categoryService->getActive();
+        $categories = $this->categoryService->getActive();
         usort($categories, function ($a, $b) {
             return strcmp(strtolower($a->getName()), strtolower($b->getName()));
         });
-        $productInfo = $productInformationService->getByProductId($product->getId());
-        $reviews = $reviewService->getReviewsByProduct($product->getId());
-        $ratingStats = $reviewService->getProductRatingStats($product->getId());
+        $productInfo = $this->productInformationService->getByProductId($product->getId());
+        $reviews = $this->reviewService->getReviewsByProduct($product->getId());
+        $ratingStats = $this->reviewService->getProductRatingStats($product->getId());
         foreach ($reviews as $review) {
-            $user = $userService->getUser($review->getUserId());
+            $user = $this->userService->getUser($review->getUserId());
             $users[] = $user;
             $reviewData[] = [
                 'review' => $review,
@@ -307,5 +312,15 @@ class Controller
         ];
 
         return $this->renderer->render($response, "cart.php", $data);
+    }
+
+    public function indexCheckout($request, $response, $args)
+    {
+        return $this->renderer->render($response, "checkout-form.php");
+    }
+
+    public function indexCheckoutReturn($request, $response, $args)
+    {
+        return $this->renderer->render($response, "checkout-return.php");
     }
 }
