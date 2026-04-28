@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/../../config/constants.php';
-$user = $_SESSION["user"] ?? NULL;
+$user = $_SESSION["user"]["data"] ?? NULL;
 ?>
 <aside class="main-sidebar sidebar-dark-primary elevation-4">
     <!-- Brand Logo -->
@@ -24,7 +24,7 @@ $user = $_SESSION["user"] ?? NULL;
 
             <?php if ($user): ?>
                 <div class="info">
-                    <a href="my-profile" class="d-block">
+                    <a href="<?php echo ROOT ?>/profile" class="d-block">
                         <?php echo $user->getUsername(); ?></a>
                 </div>
             <?php endif; ?>
@@ -92,6 +92,22 @@ $user = $_SESSION["user"] ?? NULL;
                         <i class="nav-icon fas fa-comment-dollar"></i>
                         <p>
                             Sales
+                        </p>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="product-information" class="nav-link">
+                        <i class="nav-icon fas fa-info"></i>
+                        <p>
+                            Product Information
+                        </p>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="gallery" class="nav-link">
+                        <i class="nav-icon fas fa-image"></i>
+                        <p>
+                            Gallery
                         </p>
                     </a>
                 </li>

@@ -17,9 +17,11 @@
     "slim/psr7": "^1.7",
     "rakit/validation": "^1.4",
     "middlewares/trailing-slash": "^2.1",
-    "phpunit/phpunit": "11",
+    "phpunit/phpunit": "^11.5.50",
     "slim/php-view": "^3.4",
-    "almasaeed2010/adminlte": "3.2.0"
+    "almasaeed2010/adminlte": "3.2.0",
+    "php-di/php-di": "^7.1",
+    "stripe/stripe-php": "^20.0"
   },
   "scripts": {
     "post-install-cmd": [

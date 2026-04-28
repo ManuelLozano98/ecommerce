@@ -3,44 +3,45 @@
 namespace App\Routes;
 
 use Slim\App;
-use Slim\Views\PhpRenderer;
 use App\Controllers\CategoryController;
 use App\Controllers\ProductController;
 use App\Controllers\RoleController;
 use App\Controllers\UserController;
 use App\Controllers\ReviewController;
+use App\Controllers\SaleController;
+use App\Controllers\Controller;
+use App\Controllers\ProductImageController;
+use App\Controllers\ProductInformationController;
+use App\Controllers\CartController;
+use App\Controllers\StripeController;
+use App\Middleware\AdminMiddleware;
+use App\Middleware\AuthMiddleware;
+use App\Middleware\CartMiddleware;
 
 return function (App $app) {
+    $app->get('/', Controller::class . ':index')->setName('index')->add(CartMiddleware::class);
+    $app->get('/profile/', UserController::class . ':indexProfile')->add(AuthMiddleware::class)->add(CartMiddleware::class);
+    $app->get('/categories/', CategoryController::class . ':index')->add(AdminMiddleware::class);
+    $app->get('/products/', ProductController::class . ':index')->add(AdminMiddleware::class);
+    $app->get('/users/', UserController::class . ':index')->add(AdminMiddleware::class);
+    $app->get('/roles/', RoleController::class . ':index')->add(AdminMiddleware::class);
+    $app->get('/reviews/', ReviewController::class . ':index')->add(AdminMiddleware::class);
+    $app->get('/sales/', SaleController::class . ':index')->add(AdminMiddleware::class);
+    $app->get('/product-information/', ProductInformationController::class . ':index')->add(AdminMiddleware::class);
+    $app->get('/gallery/', ProductImageController::class . ':index')->add(AdminMiddleware::class);
+    $app->get('/my-cart/', Controller::class . ':viewCart')->add(CartMiddleware::class);
+    $app->get('/login/', UserController::class . ':indexLogin');
+    $app->get('/logout/', UserController::class . ':logout')->add(AuthMiddleware::class);
+    $app->get('/admin/', UserController::class . ':indexAdmin')->add(AdminMiddleware::class)->add(CartMiddleware::class);
+    $app->get('/checkout/', Controller::class . ':indexCheckout');
+    $app->get('/checkoutReturn/', Controller::class . ':indexCheckoutReturn');
 
-    $renderer = new PhpRenderer(__DIR__ . '/../views/');
-    $categoryController = new CategoryController($renderer);
-    $productController = new ProductController($renderer);
-    $userController = new UserController($renderer);
-    $roleController = new RoleController($renderer);
-    $reviewController = new ReviewController($renderer);
+    $app->post('/cart/', CartController::class . ':add');
+    $app->post('/login/', UserController::class . ':login');
+    $app->post('/checkout/', StripeController::class . ':checkout');
+    $app->post('/checkout-status/', StripeController::class . ':checkCheckout');
+    $app->post('/webhook/stripe/', StripeController::class . ':processOrderWebhook');
 
-    $app->get('/', function ($request, $response) {
-        $response->getBody()->write('Welcome to the E-commerce');
-        return $response;
-    });
-    $app->get('/home/', function ($request, $response) {
-        $response->getBody()->write('Welcome to the E-commerce');
-        return $response;
-    });
-    $app->get('/categories/', function ($request, $response, $args) use ($categoryController) {
-        return $categoryController->index($request, $response, $args);
-    });
-
-    $app->get('/products/', function ($request, $response, $args) use ($productController) {
-        return $productController->index($request, $response, $args);
-    });
-    $app->get('/users/', function ($request, $response, $args) use ($userController) {
-        return $userController->index($request, $response, $args);
-    });
-    $app->get('/roles/', function ($request, $response, $args) use ($roleController) {
-        return $roleController->index($request, $response, $args);
-    });
-    $app->get('/reviews/', function ($request, $response, $args) use ($reviewController) {
-        return $reviewController->index($request, $response, $args);
-    });
+    $app->get('/{category:[a-z0-9-]+}/{slug:[a-z0-9-]+}/', Controller::class . ':viewProduct')->add(CartMiddleware::class);
+    $app->get('/{category:[a-z0-9-]+}/',  Controller::class . ':viewCategoryProducts')->add(CartMiddleware::class);
 };

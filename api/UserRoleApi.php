@@ -3,65 +3,70 @@
 namespace App\Api;
 
 use App\Services\UserRoleService;
+use App\Services\RoleService;
 use App\Utils\ApiHelper;
 use App\Utils\PaginationHelper;
 
 class UserRoleApi
 {
     private UserRoleService $userRoleService;
-    public function __construct()
+    private RoleService $roleService;
+
+    public function __construct(UserRoleService $userRoleService, RoleService $roleService)
     {
-        $this->userRoleService = new UserRoleService();
+        $this->userRoleService = $userRoleService;
+        $this->roleService = $roleService;
     }
 
-    public function getUserRoles($request, $response, $args)
+    public function getAll($request, $response, $args)
     {
         $userRole = $this->userRoleService->getUserRoles();
         return ApiHelper::success($response, $userRole);
     }
     public function getUserRolesDetailed($request, $response, $args)
     {
-        $usersRoles = $this->userRoleService->getUserRolesDetailedJSON();
+        $usersRoles = $this->userRoleService->getUserRolesDetailed();
         $params = $request->getQueryParams();
         if (isset($params["start"]) && isset($params["length"])) { // If start and length are present as query params pagination is applied
-            $data = PaginationHelper::paginateJSON($usersRoles, $params);
+            $json = json_encode(["data" => array_values($usersRoles)], true);
+            $data = PaginationHelper::paginateJSON($json, $params);
             $response->getBody()->write(json_encode($data));
             return $response->withStatus(200)->withHeader('Content-Type', 'application/json');
         }
+        return ApiHelper::success($response, $usersRoles);
     }
 
 
-    public function saveUserRole($request, $response, $args)
+    public function save($request, $response, $args)
     {
         $body = $request->getBody()->getContents();
         $data = json_decode($body, true);
         $data["user_id"] = $args["id"];
-        $userRole = $this->userRoleService->saveUserRole($request->getMethod(), $data);
+        $userRole = $this->userRoleService->save($data);
         return ApiHelper::success($response, $userRole);
     }
 
-    public function deleteUserRoles($request, $response, $args)
+    public function delete($request, $response, $args)
     {
-        $roleService = $this->userRoleService->getRoleService();
         $roles = $this->userRoleService->getUserRoleByRole($args["id"]);
-        foreach ($roles as $role) {
-            $this->userRoleService->deleteUserRole($role->getId());
+        foreach ($roles as $userRole) {
+            $this->userRoleService->delete($userRole->getId());
         }
-        $roleService->deleteRole($args['id']);
+        $this->roleService->delete($args['id']);
         return ApiHelper::success($response, ['message' => 'Role deleted successfully']);
     }
     public function deleteRolesByUserId($request, $response, $args)
     {
         $userRoles = $this->userRoleService->getUserRolesbyUserId($args["user_id"]);
         foreach ($userRoles as $userRole) {
-            $this->userRoleService->deleteUserRole($userRole->getId());
+            $this->userRoleService->delete($userRole->getId());
         }
         return ApiHelper::success($response, ['message' => 'All roles deleted successfully']);
     }
     public function deletebyUserIdAndRoleId($request, $response, $args)
     {
         $userRole = $this->userRoleService->getUserRolebyUserIdAndRoleId($args["id"], $args["role_id"]);
-        $this->userRoleService->deleteUserRole($userRole->getId());
+        $this->userRoleService->delete($userRole->getId());
         return ApiHelper::success($response, ['message' => 'Role deleted successfully']);
     }
 }

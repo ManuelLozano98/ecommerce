@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Utils\DatabaseHelper;
 use JsonSerializable;
 use DateTime;
 
@@ -42,7 +41,7 @@ class User implements JsonSerializable
         $this->image = $data['image'] ?? "";
         $this->document = $data['document'] ?? "";
         $this->document_type_id = $data['document_type_id'] ?? 1;
-        $this->active = $data['active'] ?? 0;
+        $this->active = (bool) ($data['active'] ?? false);
         $this->token = $data['verification_token'] ?? "";
         $this->tokenExpiredAt = $data['token_expires_at'] ?? "";
         $this->registration_date = empty($data['registration_date']) ? (new Datetime("now"))->format('Y-m-d H:i:s') : $data['registration_date'];
@@ -65,167 +64,6 @@ class User implements JsonSerializable
             'tokenExpiredAt' => $this->tokenExpiredAt,
             'registration_date' => $this->registration_date,
         ];
-    }
-
-
-    public static function insert(User $user)
-    {
-        $sql = "INSERT INTO users (name, email, password, username, phone, image, address, document, document_type_id, active, verification_token, token_expires_at,registration_date) VALUES (?, ?, ?,?,?,?,?,?,?,?,?,?,?)";
-        $success = DatabaseHelper::preparedQuery(
-            $sql,
-            "ssssssssiisss",
-            $user->getName(),
-            $user->getEmail(),
-            $user->getPassword(),
-            $user->getUsername(),
-            $user->getPhone(),
-            $user->getImage(),
-            $user->getAddress(),
-            $user->getDocument(),
-            $user->getDocumentType(),
-            $user->getActive(),
-            $user->getToken(),
-            $user->getTokenExpiredAt(),
-            $user->getRegistrationDate()
-        );
-
-        if ($success) {
-            $user->setId(DatabaseHelper::getLastId());
-            return $user;
-        }
-
-        return false;
-    }
-
-    public static function edit(User $user)
-    {
-
-        $sql = "UPDATE users SET name=?, email=?, password=?, username=?, phone=?, image=?, address=?, document=?, document_type_id=?, active=?, verification_token=?, token_expires_at=?,registration_date=? WHERE id=?";
-        $success = DatabaseHelper::preparedQuery(
-            $sql,
-            "ssssssssiisssi",
-            $user->getName(),
-            $user->getEmail(),
-            $user->getPassword(),
-            $user->getUsername(),
-            $user->getPhone(),
-            $user->getImage(),
-            $user->getAddress(),
-            $user->getDocument(),
-            $user->getDocumentType(),
-            $user->getActive(),
-            $user->getToken(),
-            $user->getTokenExpiredAt(),
-            $user->getRegistrationDate(),
-            $user->getId()
-        );
-        return $success ? $user : false;
-    }
-    public static function delete($id)
-    {
-        $sql = "DELETE FROM users WHERE id = ?";
-        return DatabaseHelper::preparedQuery($sql, "i", $id);
-    }
-
-    public static function findById($id)
-    {
-        $sql = "SELECT * FROM users WHERE id=?";
-        $data = DatabaseHelper::getDataPreparedQuery($sql, "i", $id);
-        return !empty($data) ? new User($data[0]) : false;
-    }
-    public static function findByUsername($username)
-    {
-        $sql = "SELECT * FROM users WHERE username = ?";
-        $data = DatabaseHelper::getDataPreparedQuery($sql, "s", $username);
-        return !empty($data) ? new User($data[0]) : false;
-    }
-    public static function findByEmail($email)
-    {
-        $sql = "SELECT * FROM users WHERE email=?";
-        $data = DatabaseHelper::getDataPreparedQuery($sql, "s", $email);
-        return !empty($data) ? new User($data[0]) : false;
-    }
-    public static function findByPhone($phone)
-    {
-        $sql = "SELECT * FROM users WHERE phone=?";
-        $data = DatabaseHelper::getDataPreparedQuery($sql, "s", $phone);
-        return !empty($data) ? new User($data[0]) : false;
-    }
-
-    public static function findByToken($token)
-    {
-        $sql = "SELECT * FROM users WHERE verification_token=?";
-        $data = DatabaseHelper::getDataPreparedQuery($sql, "s", $token);
-        return !empty($data) ? new User($data[0]) : false;
-    }
-    public static function findByDocumentType($documentType)
-    {
-        $sql = "SELECT * FROM users WHERE verification_token=?";
-        $data = DatabaseHelper::getDataPreparedQuery($sql, "s", $documentType);
-        return !empty($data) ? new User($data[0]) : false;
-    }
-
-    public static function findByName($name)
-    {
-        $sql = "SELECT * FROM users WHERE name = ?";
-        $data = DatabaseHelper::getDataPreparedQuery($sql, "s", $name);
-        $users = [];
-        foreach ($data as $user) {
-            $users[] = new User($user);
-        }
-        return $users;
-    }
-
-    public static function getAll()
-    {
-        $sql = "SELECT * FROM users";
-        $query = DatabaseHelper::query($sql);
-        $users = [];
-        foreach ($query as $user) {
-            $users[] = new User($user);
-        }
-        return $users;
-    }
-    public static function getAllWithDocumentTypeName()
-    {
-        $sql = "SELECT u.*, d.name AS category_name FROM users u, document_types d WHERE u.document_type_id = d.id";
-        $query = DatabaseHelper::query($sql);
-        $users = [];
-        foreach ($query as $row) {
-            $users[] = new User($row);
-        }
-        return $users;
-    }
-    public static function getCountUsers()
-    {
-        $sql = "SELECT COUNT(*) AS records FROM users";
-        return DatabaseHelper::query($sql);
-    }
-
-    public static function getUserCountLast7Days()
-    {
-        $sql = "SELECT COUNT(*) AS 'records'
-        FROM users
-        WHERE DATE(registration_date) BETWEEN DATE(NOW() - INTERVAL 6 DAY) AND CURDATE()";
-        $data = DatabaseHelper::query($sql);
-        return $data;
-    }
-
-    public static function activateAccount(User $user)
-    {
-        $sql = "UPDATE users SET active = ?, verification_token = ? WHERE id = ?";
-        return DatabaseHelper::preparedQuery($sql, "isi", 1, NULL, $user->getId());
-    }
-
-    public static function getUsernames()
-    {
-        $sql = "SELECT id, username FROM users";
-        $query = DatabaseHelper::query($sql);
-        $users = [];
-        foreach ($query as $user) {
-            $users[] = new User($user);
-        }
-        return $users;
     }
 
     public function getId()

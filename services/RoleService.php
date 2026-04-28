@@ -8,29 +8,26 @@ use App\Exceptions\UpdateException;
 use App\Exceptions\DeleteException;
 use App\Exceptions\DuplicateException;
 use App\Exceptions\NotFoundException;
+use App\Repositories\Contracts\RoleRepositoryInterface;
 
 
 class RoleService
 {
+    private RoleRepositoryInterface $repository;
 
-
-    public function getRoles()
+    public function __construct(RoleRepositoryInterface $repository)
     {
-        return Role::getAll();
+        $this->repository = $repository;
+    }
+
+    public function getAll()
+    {
+        return $this->repository->findAll();
     }
 
     public function getRole($id)
     {
-        $role = Role::findById($id);
-        if (!$role) {
-            throw new NotFoundException("The role was not found or not exists");
-        }
-        return $role;
-    }
-
-    public function getRolesName()
-    {
-        $role = Role::getIdAndName();
+        $role = $this->repository->findById($id);
         if (!$role) {
             throw new NotFoundException("The role was not found or not exists");
         }
@@ -40,48 +37,50 @@ class RoleService
 
     public function getRoleByActive($active)
     {
-        $roles = Role::findByActive($active);
-        if (!$roles) {
+        return $this->repository->findByActive($active);
+    }
+
+    public function paginate($params)
+    {
+        return $this->repository->paginate($params);
+    }
+
+
+    public function save($rawRole)
+    {
+        if ($this->repository->findByName($rawRole["name"])) {
+            throw new DuplicateException("The role name already exists");
+        }
+
+        $role = new Role($rawRole);
+
+        if (!$this->repository->insert($role)) {
+            throw new InsertException("Failed to insert role with ID " . $role->getId());
+        }
+
+        return $role;
+    }
+    public function update($rawRole)
+    {
+        $roleDb = $this->repository->findById($rawRole["id"]);
+
+        if (!$roleDb) {
             throw new NotFoundException("The role was not found or not exists");
         }
-        return $roles;
-    }
+        $roleNameDB = $this->repository->findByName($rawRole["name"]);
 
-
-    public function saveRole($method, $rawRole)
-    {
-        if ($method === "POST") {
-            if (Role::findByName($rawRole["name"])) {
-                throw new DuplicateException("The role name already exists");
-            }
-
-            $role = new Role($rawRole);
-
-            if (!Role::insert($role)) {
-                throw new InsertException("Failed to insert role with ID " . $role->getId());
-            }
-
-            return $role;
-        } else {
-            $roleDb = Role::findById($rawRole["id"]);
-
-            if (!$roleDb) {
-                throw new NotFoundException("The role was not found or not exists");
-            }
-            $roleNameDB = Role::findByName($rawRole["name"]);
-
-            if ($roleNameDB && $roleNameDB->getId() !== $roleDb->getId()) {
-                throw new DuplicateException("The role name already exists");
-            }
-
-            $role = $this->set($roleDb, $rawRole);
-
-            if (!Role::edit($role)) {
-                throw new UpdateException("Failed to update role with ID " . $role->getId());
-            }
-            return $role;
+        if ($roleNameDB && $roleNameDB->getId() !== $roleDb->getId()) {
+            throw new DuplicateException("The role name already exists");
         }
+
+        $role = $this->set($roleDb, $rawRole);
+
+        if (!$this->repository->update($role)) {
+            throw new UpdateException("Failed to update role with ID " . $role->getId());
+        }
+        return $role;
     }
+
 
     private function set($roleDb, $rawRole)
     {
@@ -100,13 +99,13 @@ class RoleService
         return $roleDb;
     }
 
-    public function deleteRole($roleId)
+    public function delete($roleId)
     {
-        if (!Role::findById($roleId)) {
+        if (!$this->repository->findById($roleId)) {
             throw new NotFoundException("The role was not found or not exists");
         }
 
-        if (!Role::delete($roleId)) {
+        if (!$this->repository->delete($roleId)) {
             throw new DeleteException("Failed to delete role with ID $roleId.");
         }
     }

@@ -111,32 +111,30 @@ function updateCounter(elementToUpdate, counterElement, limitChars) {
 }
 
 function notifyErrorResponse(res) {
-  let message;
-  let details = "";
-
-  try {
-    message = res.message || res.error;
-
-    if (res.details) {
-      const detailsObj = res.details;
-
-      for (const key in detailsObj) {
-        const fieldErrors = detailsObj[key];
-        for (const errorKey in fieldErrors) {
-          details += `${fieldErrors[errorKey]}\n`;
-        }
-      }
-    }
-  } catch (e) {
+  if (!res || typeof res !== "object") {
     toastr.error("Unexpected server error");
-    console.error("Server response: ", res);
+    console.error("Invalid server response:", res);
     return;
   }
-  if (details) {
-    toastr.error(`Error: ${message} - ${details}`);
-  } else {
-    toastr.error(`Error: ${message}`);
+
+  const message = res.message || res.error || "Unexpected server error";
+  let details = [];
+
+  if (res.details && typeof res.details === "object") {
+    Object.values(res.details).forEach((fieldErrors) => {
+      if (typeof fieldErrors === "object") {
+        Object.values(fieldErrors).forEach((errorMsg) => {
+          details.push(errorMsg);
+        });
+      }
+    });
   }
+
+  const fullMessage = details.length
+    ? `Error: ${message} - ${details.join(" ")}`
+    : `Error: ${message}`;
+
+  toastr.error(fullMessage);
 }
 
 function notifySuccessResponse(action) {
@@ -197,7 +195,7 @@ function truncateText(data) {
   if (truncated.substring(0, truncated.indexOf("..."))) {
     return `<span>${truncated}</span>
               <button class="btn btn-link btn-sm view-full-text" data-full="${encodeURIComponent(
-                data
+                data,
               )}">See more</button>`;
   } else {
     return `<span>${truncated}</span>`;

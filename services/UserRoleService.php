@@ -11,41 +11,41 @@ use App\Exceptions\DeleteException;
 use App\Exceptions\DuplicateException;
 use App\Exceptions\ForeignKeyException;
 use App\Exceptions\NotFoundException;
-use App\Services\UserService;
-use App\Services\RoleService;
+use App\Repositories\Contracts\RoleRepositoryInterface;
+use App\Repositories\Contracts\UserRepositoryInterface;
+use App\Repositories\Contracts\UserRoleRepositoryInterface;
 
 
 class UserRoleService
 {
-    private UserService $userService;
-    private RoleService $roleService;
+    private UserRoleRepositoryInterface $userRoleRepository;
+    private UserRepositoryInterface $userRepository;
+    private RoleRepositoryInterface $roleRepository;
 
-    public function __construct()
+    public function __construct(UserRoleRepositoryInterface $userRoleRepository, UserRepositoryInterface $userRepository, RoleRepositoryInterface $roleRepository)
     {
-        $this->userService = new UserService();
-        $this->roleService = new RoleService();
+        $this->userRoleRepository = $userRoleRepository;
+        $this->userRepository = $userRepository;
+        $this->roleRepository = $roleRepository;
     }
 
     public function getUserRoles()
     {
-        return UserRole::getAll();
+        return $this->userRoleRepository->findAll();
     }
     public function getUserswithRole(Role $role)
     {
-        return UserRole::getUsersByRole($role);
+        return $this->userRoleRepository->findByRoleId($role->getId());
     }
-    public function getUserswithRoleName($rolename)
-    {
-        return UserRole::getUsersByRoleName($rolename);
-    }
+
     public function getUserRoleByRole($roleId)
     {
-        return UserRole::findByRoleId($roleId);
+        return $this->userRoleRepository->findByRoleId($roleId);
     }
 
     public function getUserRoleById($id)
     {
-        $userRole = UserRole::findById($id);
+        $userRole = $this->userRoleRepository->findById($id);
         if (!$userRole) {
             throw new NotFoundException("The userRole was not found or not exists");
         }
@@ -53,103 +53,87 @@ class UserRoleService
     }
     public function getUserRolesbyUserId($userId)
     {
-        $usersRoles = UserRole::findByUserId($userId);
+        return $this->userRoleRepository->findByUserId($userId);
+    }
+
+    public function getUserRolebyUserIdAndRoleId($userId, $roleId)
+    {
+        $usersRoles = $this->userRoleRepository->findByUserIdAndRoleId($userId, $roleId);
         if (!$usersRoles) {
             throw new NotFoundException("The user was not found or not exists");
         }
         return $usersRoles;
     }
 
-    public function getUserRolebyUserIdAndRoleId($userId, $roleId)
+    public function getUserRolesDetailed()
     {
-        $usersRoles = UserRole::findByUserIdAndRoleId($userId, $roleId);
-        if (!$usersRoles) {
-            throw new NotFoundException("The user was not found or not exists");
-        }
-        return $usersRoles[0];
-    }
-
-    public function getUserRolesDetailedJSON()
-    {
-        $usersRoles = UserRole::getAll();
+        $usersRoles = $this->userRoleRepository->findAll();
         $data = [];
         foreach ($usersRoles as $key => $value) {
             $data[$key] = $value->toArray();
-            $data[$key]["username"] = $this->userService->getUser($value->getUserId())->getUsername();
-            $data[$key]["name"] = $this->roleService->getRole($value->getRoleId())->getName();
+            $data[$key]["username"] = $this->userRepository->findById($value->getUserId())->getUsername();
+            $data[$key]["name"] = $this->roleRepository->findById($value->getRoleId())->getName();
         }
-        $json = [];
+        $result = [];
         foreach ($data as $entry) {
             $user = $entry["username"];
-            if (!isset($json[$user])) {
-                $json[$user] = [
+            if (!isset($result[$user])) {
+                $result[$user] = [
                     "user_id" => $entry["user_id"],
-                    "username" => $user,
+                    "username" => $entry["username"],
                     "roles" => []
                 ];
             }
-            $json[$user]["roles"][] = [
+            $result[$user]["roles"][] = [
                 "id" => $entry["id"],
                 "role_id" => $entry["role_id"],
                 "name" => $entry["name"]
             ];
         }
-        $json = json_encode(["data" => array_values($json)], true);
-        return $json;
+        return $result;
     }
 
-    public function hasAdminRole($user)
+
+    public function save($rawUserRole)
     {
-        if (!$user || !$user instanceof User) {
+        if (!$this->userRepository->findById($rawUserRole["user_id"])) {
             throw new NotFoundException("The user was not found or not exists");
         }
-        return UserRole::isAdmin($user);
-    }
-    public function hasRole(User $user, $rolename)
-    {
-        return UserRole::hasRole($user, $rolename);
-    }
-
-
-    public function saveUserRole($method, $rawUserRole)
-    {
-        if ($method === "POST") {
-            if (!$this->userService->getUser($rawUserRole["user_id"])) {
-                throw new NotFoundException("The user was not found or not exists");
-            }
-            if (!$this->roleService->getRole($rawUserRole["role_id"])) {
-                throw new NotFoundException("The role was not found or not exists");
-            }
-            if (UserRole::findByUserIdAndRoleId($rawUserRole["user_id"], $rawUserRole["role_id"])) {
-                throw new DuplicateException("The user already has the role");
-            }
-
-            $userRole = new UserRole($rawUserRole);
-
-            if (!UserRole::insert($userRole)) {
-                throw new InsertException("Failed to insert userRole with ID " . $userRole->getId());
-            }
-
-            return $userRole;
-        } else {
-            $userRoleDb = UserRole::findById($rawUserRole["id"]);
-
-            if (!$userRoleDb) {
-                throw new NotFoundException("The userRole was not found or not exists");
-            }
-            $canEdit = UserRole::findByUserIdAndRoleId($rawUserRole["user_id"], $rawUserRole["role_id"])[0];
-            if ($canEdit && $userRoleDb->getId() !== $canEdit->getId()) {
-                throw new DuplicateException("The user already has the role");
-            }
-
-            $userRole = $this->set($userRoleDb, $rawUserRole);
-
-            if (!UserRole::edit($userRole)) {
-                throw new UpdateException("Failed to update userRole with ID " . $userRole->getId());
-            }
-            return $userRole;
+        if (!$this->roleRepository->findById($rawUserRole["role_id"])) {
+            throw new NotFoundException("The role was not found or not exists");
         }
+        if ($this->userRoleRepository->findByUserIdAndRoleId($rawUserRole["user_id"], $rawUserRole["role_id"])) {
+            throw new DuplicateException("The user already has the role");
+        }
+
+        $userRole = new UserRole($rawUserRole);
+
+        if (!$this->userRoleRepository->insert($userRole)) {
+            throw new InsertException("Failed to insert userRole with ID " . $userRole->getId());
+        }
+
+        return $userRole;
     }
+    public function update($rawUserRole)
+    {
+        $userRoleDb = $this->userRoleRepository->findById($rawUserRole["id"]);
+
+        if (!$userRoleDb) {
+            throw new NotFoundException("The userRole was not found or not exists");
+        }
+        $canEdit = $this->userRoleRepository->findByUserIdAndRoleId($rawUserRole["user_id"], $rawUserRole["role_id"])[0];
+        if ($canEdit && $userRoleDb->getId() !== $canEdit->getId()) {
+            throw new DuplicateException("The user already has the role");
+        }
+
+        $userRole = $this->set($userRoleDb, $rawUserRole);
+
+        if (!$this->userRoleRepository->update($userRole)) {
+            throw new UpdateException("Failed to update userRole with ID " . $userRole->getId());
+        }
+        return $userRole;
+    }
+
 
     private function set($userRoleDb, $rawUserRole)
     {
@@ -169,23 +153,14 @@ class UserRoleService
     }
 
 
-    public function deleteUserRole($userRoleId)
+    public function delete($userRoleId)
     {
-        if (!UserRole::findById($userRoleId)) {
+        if (!$this->userRoleRepository->findById($userRoleId)) {
             throw new NotFoundException("The userRole was not found or not exists");
         }
 
-        if (!UserRole::delete($userRoleId)) {
+        if (!$this->userRoleRepository->delete($userRoleId)) {
             throw new DeleteException("Failed to delete userRole with ID $userRoleId.");
         }
-    }
-
-    public function getRoleService()
-    {
-        return $this->roleService;
-    }
-    public function getUserService()
-    {
-        return $this->userService;
     }
 }

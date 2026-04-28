@@ -164,6 +164,12 @@ function getCategories() {
         },
       },
       {
+        data: "slug",
+        render: function (data) {
+          return truncateText(data);
+        },
+      },
+      {
         data: "active",
         render: function (data, type, row) {
           return data === 1 ? "Yes" : "No";
@@ -189,6 +195,7 @@ function loadEditForm() {
     $("#edit-name").val(data.name);
     $("#edit-idcategory").val(data.id);
     $("#edit-description").val(data.description);
+    $("#edit-slug").val(data.slug);
     $("#customSwitch1").prop("checked", data.active === 1);
 
     const $description = $("#edit-description");

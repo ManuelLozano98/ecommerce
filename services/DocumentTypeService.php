@@ -9,17 +9,25 @@ use App\Exceptions\DeleteException;
 use App\Exceptions\NotFoundException;
 use App\Exceptions\DuplicateException;
 use App\Models\DocumentType;
+use App\Repositories\Contracts\DocumentTypeRepositoryInterface;
 
 
 class DocumentTypeService
 {
+    private DocumentTypeRepositoryInterface $document;
 
-    public function getDocument_Types()
+    public function __construct(DocumentTypeRepositoryInterface $document)
     {
-        return DocumentType::getAll();
+        $this->document = $document;
     }
-    public function getDocument_TypeById($id)
+
+    public function getAll()
     {
-        return DocumentType::findById($id);
+        return $this->document->findAll();
     }
+    public function getById($id)
+    {
+        return $this->document->findById($id);
+    }
+
 }

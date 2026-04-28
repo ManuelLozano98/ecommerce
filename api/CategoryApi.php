@@ -2,56 +2,41 @@
 
 namespace App\Api;
 
+use App\Dtos\CategoryNameDTO;
 use App\Services\CategoryService;
-use App\Services\ProductService;
-use App\Models\Category;
 use App\Utils\ApiHelper;
 use Rakit\Validation\Validator;
 use Rakit\Validation\ErrorBag;
-use App\Utils\PaginationHelper;
 
 class CategoryApi
 {
     private CategoryService $categoryService;
-    private ProductService $productService;
     private Validator $validator;
 
-    public function __construct()
+    public function __construct(CategoryService $categoryService, Validator $validator)
     {
-        $this->categoryService = new CategoryService();
-        $this->productService = new ProductService();
-        $this->validator = new Validator();
+        $this->categoryService = $categoryService;
+        $this->validator = $validator;
     }
 
-
-    public function getCategories($request, $response, $args)
+    public function getAll($request, $response, $args)
     {
         $params = $request->getQueryParams();
         if (isset($params["start"]) && isset($params["length"])) { // If start and length are present as query params pagination is applied 
-            $tableName = "categories";
-            $search = $params['search']['value'] ?? '';
-            $columns = ['id', 'name', 'description', 'active'];
-            $data = PaginationHelper::make($params, $tableName, $columns);
-
-
-            $filteredRecords = PaginationHelper::getFilteredCount($search, $tableName, $columns);
-            $totalRecords = PaginationHelper::getTotalRecords($tableName);
+            $paginatedData = $this->categoryService->paginate($params);
 
             $payload = [ // DataTables expects a response object with the following structure
                 'draw' => (int)($params['draw'] ?? 1),
-                'recordsTotal' => $totalRecords,
-                'recordsFiltered' => $filteredRecords,
-                'data' => $data
+                'recordsTotal' => $paginatedData['recordsTotal'],
+                'recordsFiltered' => $paginatedData['recordsFiltered'],
+                'data' => $paginatedData['data']
             ];
 
             $response->getBody()->write(json_encode($payload));
             return $response->withStatus(200)->withHeader('Content-Type', 'application/json');
         }
 
-        $categories = $this->categoryService->getCategories();
-        if (!$categories) {
-            return ApiHelper::error($response, ['message' => 'No categories found'], 404);
-        }
+        $categories = $this->categoryService->getAll();
         return ApiHelper::success($response, $categories);
     }
 
@@ -65,49 +50,50 @@ class CategoryApi
 
     public function getCategoriesName($request, $response, $args)
     {
-        $categories = $this->categoryService->getCategoriesName();
-        $category = array_map(fn(Category $c) => [
-            'id' => (int) $c->getId(),
-            'name' => $c->getName()
-        ], $categories);
-        return ApiHelper::success($response, $category);
+        $categories = $this->categoryService->getAll();
+        return ApiHelper::success($response, CategoryNameDTO::from($categories));
     }
 
 
-    public function saveCategory($request, $response, $args)
+    public function save($request, $response, $args)
     {
         $body = $request->getBody()->getContents();
         $data = json_decode($body, true);
         if (!$data) {
             return ApiHelper::error($response, ['message' => 'Invalid JSON input'], 400);
         }
-        if (isset($args['id'])) {
-            $data['id'] = $args['id'];
-            $method = "PUT";
-        } else {
-            $method = "POST";
-        }
 
-        $isValid = $this->validateCategory($data);
+        $isValid = $this->validate($data);
         if (is_object($isValid) && $isValid instanceof ErrorBag) {
             $errors = $isValid->toArray();
             return ApiHelper::error($response, ['message' => 'Invalid input data', 'details' => $errors], 400);
-        } else {
-            $data = $this->categoryService->saveCategory($method, $data);
-            return ApiHelper::success($response, $data);
+        }
+
+        if ($request->getMethod() === "POST") {
+            return ApiHelper::success(
+                $response,
+                $this->categoryService->save($data)
+            );
+        }
+        if ($request->getMethod() === "PUT") {
+            $data['id'] = $args['id'];
+            return ApiHelper::success(
+                $response,
+                $this->categoryService->update($data)
+            );
         }
     }
 
 
 
-    public function deleteCategory($request, $response, $args)
+    public function delete($request, $response, $args)
     {
-        $this->categoryService->deleteCategory($args['id'], $this->productService);
+        $this->categoryService->delete($args['id']);
         return ApiHelper::success($response, ['message' => 'Category deleted successfully']);
     }
 
 
-    private function validateCategory($data)
+    private function validate($data)
     {
         $validator = $this->validator->make($data, [
             'name' => 'required|regex:/^.{3,70}$/u',

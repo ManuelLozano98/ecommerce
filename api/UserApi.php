@@ -2,51 +2,45 @@
 
 namespace App\Api;
 
+use App\Dtos\UserDocumentTypeDTO;
 use App\Services\UserService;
-use App\Models\User;
 use App\Utils\ApiHelper;
 use Rakit\Validation\Validator;
 use Rakit\Validation\ErrorBag;
-use App\Utils\PaginationHelper;
 use App\Services\DocumentTypeService;
+use App\Dtos\UserUsernamesDTO;
 
 class UserApi
 {
     private UserService $userService;
+    private DocumentTypeService $documentService;
     private Validator $validator;
 
-    public function __construct()
+    public function __construct(UserService $userService, DocumentTypeService $documentService, Validator $validator)
     {
-        $this->userService = new UserService();
-        $this->validator = new Validator();
+        $this->userService = $userService;
+        $this->documentService = $documentService;
+        $this->validator = $validator;
     }
 
 
-    public function getUsers($request, $response, $args)
+    public function getAll($request, $response, $args)
     {
         $params = $request->getQueryParams();
         if (isset($params["start"]) && isset($params["length"])) { // If start and length are present as query params pagination is applied 
-            $tableName = "users";
-            $search = $params['search']['value'] ?? '';
-            $columns = ['id', 'name', 'email', 'username', 'phone', 'image', 'address', 'document', 'document_type_id', 'verification_token', 'token_expires_at', 'registration_date', 'active']; //The columns must be in the same order as front end user table
-            $data = PaginationHelper::make($params, $tableName, $columns);
-
-
-            $filteredRecords = PaginationHelper::getFilteredCount($search, $tableName, $columns);
-            $totalRecords = PaginationHelper::getTotalRecords($tableName);
-
+            $paginatedData = $this->userService->paginate($params);
             $payload = [ // DataTables expects a response object with the following structure
                 'draw' => (int)($params['draw'] ?? 1),
-                'recordsTotal' => $totalRecords,
-                'recordsFiltered' => $filteredRecords,
-                'data' => $data
+                'recordsTotal' => $paginatedData['recordsTotal'],
+                'recordsFiltered' => $paginatedData['recordsFiltered'],
+                'data' => $paginatedData['data']
             ];
 
             $response->getBody()->write(json_encode($payload));
             return $response->withStatus(200)->withHeader('Content-Type', 'application/json');
         }
 
-        $users = $this->userService->getUsers();
+        $users = $this->userService->getAll();
         return ApiHelper::success($response, $users);
     }
 
@@ -54,60 +48,20 @@ class UserApi
     {
         $params = $request->getQueryParams();
         if (isset($params["start"]) && isset($params["length"])) { // If start and length are present as query params pagination is applied 
-            $selectFields = [
-                'u.id',
-                'u.name',
-                'u.email',
-                'u.username',
-                'u.phone',
-                'u.image',
-                'u.address',
-                'u.document',
-                'u.document_type_id',
-                'u.verification_token',
-                'u.token_expires_at',
-                'd.name AS document_name',
-                'u.registration_date',
-                'u.active'
-            ];
-
-            $columns = [
-                'u.id',
-                'u.name',
-                'u.email',
-                'u.username',
-                'u.phone',
-                'u.image',
-                'u.address',
-                'u.document',
-                'd.name',
-                'u.verification_token',
-                'u.token_expires_at',
-                'u.registration_date',
-                'u.active'
-            ];
-
-            $fromClause = 'users u JOIN document_types d ON u.document_type_id = d.id';
-            $search = $params['search']['value'] ?? '';
-
-            $data = PaginationHelper::makeCustom($params, $fromClause, $columns, $selectFields);
-            $totalRecords = PaginationHelper::getTotalRecordsCustom($fromClause);
-            $filteredRecords = PaginationHelper::getFilteredCustomCount($search, $fromClause, $columns);
-
-
-            $payload = [
+            $paginatedData = $this->userService->paginateDetailed($params);
+            $payload = [ // DataTables expects a response object with the following structure
                 'draw' => (int)($params['draw'] ?? 1),
-                'recordsTotal' => $totalRecords,
-                'recordsFiltered' => $filteredRecords,
-                'data' => $data
+                'recordsTotal' => $paginatedData['recordsTotal'],
+                'recordsFiltered' => $paginatedData['recordsFiltered'],
+                'data' => $paginatedData['data']
             ];
 
             $response->getBody()->write(json_encode($payload));
             return $response->withStatus(200)->withHeader('Content-Type', 'application/json');
         }
-
-        $users = $this->userService->getUsersWithDocumentTypeName();
-        return ApiHelper::success($response, $users);
+        $users = $this->userService->getAll();
+        $documents = $this->documentService->getAll();
+        return ApiHelper::success($response, UserDocumentTypeDTO::from($users, $documents));
     }
 
 
@@ -119,51 +73,56 @@ class UserApi
 
     public function getUserWithDocumentType($request, $response, $args)
     {
-        $user = $this->userService->getUsersWithDocumentTypeName();
-        return ApiHelper::success($response, $user);
+        $users = $this->userService->getAll();
+        $documents = $this->documentService->getAll();
+        return ApiHelper::success($response, UserDocumentTypeDTO::from($users, $documents));
     }
 
     public function getDocumentType($request, $response, $args)
     {
-        $documentTypes = new DocumentTypeService();
-        $user = $this->userService->getDocumentTypes($documentTypes);
-        return ApiHelper::success($response, $user);
+        $documents = $this->userService->getDocumentTypes($this->documentService);
+        return ApiHelper::success($response, $documents);
     }
 
     public function getUsernames($request, $response, $args)
     {
-        $users = $this->userService->getUsernames();
-        return ApiHelper::success($response, $users);
+        $users = $this->userService->getAll();
+        return ApiHelper::success($response, UserUsernamesDTO::from($users));
     }
 
 
-    public function saveUser($request, $response, $args)
+    public function save($request, $response, $args)
     {
         $body = $request->getBody()->getContents();
         $data = json_decode($body, true);
         if (!$data) {
             return ApiHelper::error($response, ['message' => 'Invalid JSON input'], 400);
         }
-        if (isset($args['id'])) {
-            $data['id'] = $args['id'];
-            $method = "PUT";
-        } else {
-            $method = "POST";
-        }
+        $isValid = $this->validate($data, $request->getMethod());
 
-        $isValid = $this->validateUser($data, $method);
         if (is_object($isValid) && $isValid instanceof ErrorBag) {
             $errors = $isValid->toArray();
             return ApiHelper::error($response, ['message' => 'Invalid input data', 'details' => $errors], 400);
         }
 
-        $data = $this->userService->saveUser($method, $data);
-        return ApiHelper::success($response, $data);
+        if ($request->getMethod() === "POST") {
+            return ApiHelper::success(
+                $response,
+                $this->userService->save($data)
+            );
+        }
+        if ($request->getMethod() === "PUT") {
+            $data['id'] = $args['id'];
+            return ApiHelper::success(
+                $response,
+                $this->userService->update($data)
+            );
+        }
     }
 
-    public function deleteUser($request, $response, $args)
+    public function delete($request, $response, $args)
     {
-        $this->userService->deleteUser($args['id'], $this->userService);
+        $this->userService->delete($args['id'], $this->userService);
         return ApiHelper::success($response, ['message' => 'User deleted successfully']);
     }
 
@@ -175,7 +134,7 @@ class UserApi
         }
 
         $img = $body["image"];
-        $isValid = $this->validateImage($img);
+        $isValid = $this->validateImageExt($img);
         if (!$isValid) {
             return ApiHelper::error($response, ['message' => 'Invalid image'], 400);
         }
@@ -186,7 +145,7 @@ class UserApi
     }
 
 
-    private function validateUser($data, $method)
+    private function validate($data, $method)
     {
         if ($method === "POST") {
             $validator = $this->validator->make($data, [
@@ -221,7 +180,7 @@ class UserApi
         return true;
     }
 
-    private function validateImage($file)
+    private function validateImageExt($file)
     {
 
         $fileExt = strtolower(pathinfo($file->getClientFileName(), PATHINFO_EXTENSION));

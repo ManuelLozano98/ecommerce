@@ -3,49 +3,58 @@
 namespace App\Api;
 
 use App\Services\ProductService;
-use App\Models\Product;
 use App\Utils\ApiHelper;
 use Rakit\Validation\Validator;
 use Rakit\Validation\ErrorBag;
-use App\Utils\PaginationHelper;
+use App\Dtos\ProductNameDTO;
 
 class ProductApi
 {
     private ProductService $productService;
     private Validator $validator;
 
-    public function __construct()
+    public function __construct(ProductService $productService, Validator $validator)
     {
-        $this->productService = new ProductService();
-        $this->validator = new Validator();
+        $this->productService = $productService;
+        $this->validator = $validator;
     }
 
 
-    public function getProducts($request, $response, $args)
+    public function getAll($request, $response, $args)
     {
         $params = $request->getQueryParams();
         if (isset($params["start"]) && isset($params["length"])) { // If start and length are present as query params pagination is applied 
-            $tableName = "products";
-            $search = $params['search']['value'] ?? '';
-            $columns = ['id', 'name', 'description', 'code', 'image', 'stock', 'price', 'category_id', 'created_at', 'active']; //The columns must be in the same order as front end product table
-            $data = PaginationHelper::make($params, $tableName, $columns);
-
-
-            $filteredRecords = PaginationHelper::getFilteredCount($search, $tableName, $columns);
-            $totalRecords = PaginationHelper::getTotalRecords($tableName);
-
+            $paginatedData = $this->productService->paginate($params);
             $payload = [ // DataTables expects a response object with the following structure
                 'draw' => (int)($params['draw'] ?? 1),
-                'recordsTotal' => $totalRecords,
-                'recordsFiltered' => $filteredRecords,
-                'data' => $data
+                'recordsTotal' => $paginatedData['recordsTotal'],
+                'recordsFiltered' => $paginatedData['recordsFiltered'],
+                'data' => $paginatedData['data']
             ];
 
             $response->getBody()->write(json_encode($payload));
             return $response->withStatus(200)->withHeader('Content-Type', 'application/json');
+        } else if (isset($params)) {
+            $search = $params['search'] ?? "";
+            $categoriesFilter = $params['categories'] ?? [];
+            $scoreFilter = $params['scores'] ?? [];
+            $priceFilter = $params['range_price'] ?? [];
+            $sort = $params['sort'] ?? "";
+            $limit = $params["limit"] ?? 0;
+            $offset = $params["offset"] ?? 0;
+
+            $filters = [
+                'search' => $search,
+                'categories' => $categoriesFilter,
+                'scores' => $scoreFilter,
+                'prices' => $priceFilter,
+                'sort' => $sort
+            ];
+            $products = $this->productService->getProductsFiltered($filters, $limit, $offset);
+            return ApiHelper::success($response, $products);
         }
 
-        $products = $this->productService->getProducts();
+        $products = $this->productService->getAll();
         return ApiHelper::success($response, $products);
     }
 
@@ -53,53 +62,18 @@ class ProductApi
     {
         $params = $request->getQueryParams();
         if (isset($params["start"]) && isset($params["length"])) { // If start and length are present as query params pagination is applied 
-            $selectFields = [
-                'p.id',
-                'p.name AS product_name',
-                'p.code',
-                'p.description',
-                'p.price',
-                'p.image',
-                'p.stock',
-                'p.active AS active',
-                'p.created_at',
-                'c.name AS category_name',
-                'c.id AS category_id'
-            ];
-
-            $columns = [
-                'p.id',
-                'p.name',
-                'p.description',
-                'p.code',
-                'p.image',
-                'p.stock',
-                'p.price',
-                'c.name',
-                'p.created_at',
-                'p.active'
-            ];
-
-            $fromClause = 'products p JOIN categories c ON p.category_id = c.id';
-            $search = $params['search']['value'] ?? '';
-
-            $data = PaginationHelper::makeCustom($params, $fromClause, $columns, $selectFields);
-            $totalRecords = PaginationHelper::getTotalRecordsCustom($fromClause);
-            $filteredRecords = PaginationHelper::getFilteredCustomCount($search, $fromClause, $columns);
-
-
-            $payload = [
+            $paginatedData = $this->productService->paginateDetailed($params);
+            $payload = [ // DataTables expects a response object with the following structure
                 'draw' => (int)($params['draw'] ?? 1),
-                'recordsTotal' => $totalRecords,
-                'recordsFiltered' => $filteredRecords,
-                'data' => $data
+                'recordsTotal' => $paginatedData['recordsTotal'],
+                'recordsFiltered' => $paginatedData['recordsFiltered'],
+                'data' => $paginatedData['data']
             ];
-
             $response->getBody()->write(json_encode($payload));
             return $response->withStatus(200)->withHeader('Content-Type', 'application/json');
         }
 
-        $products = $this->productService->getProductsDetailed();
+        $products = $this->productService->getAll();
         return ApiHelper::success($response, $products);
     }
 
@@ -118,43 +92,41 @@ class ProductApi
 
     public function getProductsName($request, $response, $args)
     {
-        $products = $this->productService->getProductsName();
-        $product = array_map(fn(Product $p) => [
-            'id' => $p->getId(),
-            'name' => $p->getName()
-        ], $products);
-        return ApiHelper::success($response, $product);
+        $products = $this->productService->getAll();
+        return ApiHelper::success($response, ProductNameDTO::from($products));
     }
 
 
-
-    public function saveProduct($request, $response, $args)
+    public function save($request, $response, $args)
     {
         $body = $request->getBody()->getContents();
         $data = json_decode($body, true);
         if (!$data) {
             return ApiHelper::error($response, ['message' => 'Invalid JSON input'], 400);
         }
-        if (isset($args['id'])) {
-            $data['id'] = $args['id'];
-            $method = "PUT";
-        } else {
-            $method = "POST";
-        }
-
-        $isValid = $this->validateProduct($data);
+        $isValid = $this->validate($data);
         if (is_object($isValid) && $isValid instanceof ErrorBag) {
             $errors = $isValid->toArray();
             return ApiHelper::error($response, ['message' => 'Invalid input data', 'details' => $errors], 400);
         }
-
-        $data = $this->productService->saveProduct($method, $data);
-        return ApiHelper::success($response, $data);
+        if ($request->getMethod() === "POST") {
+            return ApiHelper::success(
+                $response,
+                $this->productService->save($data)
+            );
+        }
+        if ($request->getMethod() === "PUT") {
+            $data['id'] = $args['id'];
+            return ApiHelper::success(
+                $response,
+                $this->productService->update($data)
+            );
+        }
     }
 
-    public function deleteProduct($request, $response, $args)
+    public function delete($request, $response, $args)
     {
-        $this->productService->deleteProduct($args['id'], $this->productService);
+        $this->productService->delete($args['id']);
         return ApiHelper::success($response, ['message' => 'Product deleted successfully']);
     }
 
@@ -166,7 +138,7 @@ class ProductApi
         }
 
         $img = $body["image"];
-        $isValid = $this->validateImage($img);
+        $isValid = $this->validateImageExt($img);
         if (!$isValid) {
             return ApiHelper::error($response, ['message' => 'Invalid image'], 400);
         }
@@ -177,7 +149,7 @@ class ProductApi
     }
 
 
-    private function validateProduct($data)
+    private function validate($data)
     {
         $validator = $this->validator->make($data, [
             'category_id' => 'required|integer|min:1',
@@ -198,7 +170,7 @@ class ProductApi
         return true;
     }
 
-    private function validateImage($file)
+    private function validateImageExt($file)
     {
 
         $fileExt = strtolower(pathinfo($file->getClientFileName(), PATHINFO_EXTENSION));

@@ -2,53 +2,41 @@
 
 namespace App\Api;
 
+use App\Dtos\RoleNameDTO;
 use App\Services\RoleService;
-use App\Models\Role;
 use App\Utils\ApiHelper;
 use Rakit\Validation\Validator;
 use Rakit\Validation\ErrorBag;
-use App\Utils\PaginationHelper;
 
 class RoleApi
 {
     private RoleService $roleService;
     private Validator $validator;
 
-    public function __construct()
+    public function __construct(RoleService $roleService, Validator $validator)
     {
-        $this->roleService = new RoleService();
-        $this->validator = new Validator();
+        $this->roleService = $roleService;
+        $this->validator = $validator;
     }
 
 
-    public function getRoles($request, $response, $args)
+    public function getAll($request, $response, $args)
     {
         $params = $request->getQueryParams();
         if (isset($params["start"]) && isset($params["length"])) { // If start and length are present as query params pagination is applied 
-            $tableName = "roles";
-            $search = $params['search']['value'] ?? '';
-            $columns = ['id', 'name', 'description', 'active'];
-            $data = PaginationHelper::make($params, $tableName, $columns);
-
-
-            $filteredRecords = PaginationHelper::getFilteredCount($search, $tableName, $columns);
-            $totalRecords = PaginationHelper::getTotalRecords($tableName);
-
+            $paginatedData = $this->roleService->paginate($params);
             $payload = [ // DataTables expects a response object with the following structure
                 'draw' => (int)($params['draw'] ?? 1),
-                'recordsTotal' => $totalRecords,
-                'recordsFiltered' => $filteredRecords,
-                'data' => $data
+                'recordsTotal' => $paginatedData['recordsTotal'],
+                'recordsFiltered' => $paginatedData['recordsFiltered'],
+                'data' => $paginatedData['data']
             ];
 
             $response->getBody()->write(json_encode($payload));
             return $response->withStatus(200)->withHeader('Content-Type', 'application/json');
         }
 
-        $roles = $this->roleService->getRoles();
-        if (!$roles) {
-            return ApiHelper::error($response, ['message' => 'No roles found'], 404);
-        }
+        $roles = $this->roleService->getAll();
         return ApiHelper::success($response, $roles);
     }
 
@@ -62,47 +50,46 @@ class RoleApi
 
     public function getRolesName($request, $response, $args)
     {
-        $roles = $this->roleService->getRolesName();
-        $role = array_map(fn(Role $r) => [
-            'id' => (int) $r->getId(),
-            'name' => $r->getName()
-        ], $roles);
-        return ApiHelper::success($response, $role);
+        $roles = $this->roleService->getAll();
+        return ApiHelper::success($response, RoleNameDTO::from($roles));
     }
 
 
-    public function saveRole($request, $response, $args)
+    public function save($request, $response, $args)
     {
         $body = $request->getBody()->getContents();
         $data = json_decode($body, true);
         if (!$data) {
             return ApiHelper::error($response, ['message' => 'Invalid JSON input'], 400);
         }
-        if (isset($args['id'])) {
-            $data['id'] = $args['id'];
-            $method = "PUT";
-        } else {
-            $method = "POST";
-        }
 
-        $isValid = $this->validateRole($data);
+        $isValid = $this->validate($data);
         if (is_object($isValid) && $isValid instanceof ErrorBag) {
             $errors = $isValid->toArray();
             return ApiHelper::error($response, ['message' => 'Invalid input data', 'details' => $errors], 400);
-        } else {
-            $data = $this->roleService->saveRole($method, $data);
-            return ApiHelper::success($response, $data);
+        }
+        if ($request->getMethod() === "POST") {
+            return ApiHelper::success(
+                $response,
+                $this->roleService->save($data)
+            );
+        }
+        if ($request->getMethod() === "PUT") {
+            $data['id'] = $args['id'];
+            return ApiHelper::success(
+                $response,
+                $this->roleService->update($data)
+            );
         }
     }
 
-    public function deleteRole($request, $response, $args){
-
-        $this->roleService->deleteRole($args['id']);
+    public function delete($request, $response, $args)
+    {
+        $this->roleService->delete($args['id']);
         return ApiHelper::success($response, ['message' => 'Role deleted successfully']);
-
     }
 
-    private function validateRole($data)
+    private function validate($data)
     {
         $validator = $this->validator->make($data, [
             'name' => 'required|regex:/^.{3,70}$/u',
