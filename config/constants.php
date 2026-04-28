@@ -9,3 +9,4 @@ define("UPLOADS", ROOT . "/uploads");
 define("UPLOADS_IMAGES", UPLOADS . "/images");
 define("UPLOADS_USERS_IMAGES", UPLOADS_IMAGES . "/users");
 define("UPLOADS_PRODUCTS_IMAGES", UPLOADS_IMAGES . "/products");
+define("URL_LOCAL_SITE", "http://localhost/Ecommerce/");
