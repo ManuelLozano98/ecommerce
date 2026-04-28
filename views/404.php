@@ -40,7 +40,7 @@ require_once __DIR__ . "/layout/header.php";
                 <p>
                     Meanwhile, you may
                     <?php if (isset($_SESSION["user"])): ?>
-                        <a href="<?php echo ROOT . "/home" ?>">return to dashboard</a>
+                        <a href="<?php echo ROOT ?>">return to dashboard</a>
                     <?php endif; ?>
                     <a href="<?php echo ROOT . "/" ?>">return to main page</a>
                 </p>
