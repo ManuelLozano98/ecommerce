@@ -35,13 +35,19 @@ return function (App $app) {
     $app->get('/admin/', UserController::class . ':indexAdmin')->add(AdminMiddleware::class)->add(CartMiddleware::class);
     $app->get('/checkout/', Controller::class . ':indexCheckout');
     $app->get('/checkoutReturn/', Controller::class . ':indexCheckoutReturn');
+    $app->get('/checkout/address/', Controller::class . ':indexCheckoutAddress')->add(CartMiddleware::class);
 
     $app->post('/cart/', CartController::class . ':add');
     $app->post('/login/', UserController::class . ':login');
     $app->post('/checkout/', StripeController::class . ':checkout');
     $app->post('/checkout-status/', StripeController::class . ':checkCheckout');
     $app->post('/webhook/stripe/', StripeController::class . ':processOrderWebhook');
+    $app->post('/review/', ReviewController::class . ':preReviewProduct');
+    $app->post('/review-product/', ReviewController::class . ':reviewProduct');
 
     $app->get('/{category:[a-z0-9-]+}/{slug:[a-z0-9-]+}/', Controller::class . ':viewProduct')->add(CartMiddleware::class);
     $app->get('/{category:[a-z0-9-]+}/',  Controller::class . ':viewCategoryProducts')->add(CartMiddleware::class);
+
+    $app->post('/checkout/start/', Controller::class . ':checkoutStart');
+    $app->post('/checkout/address/', Controller::class . ':checkoutAddress');
 };
