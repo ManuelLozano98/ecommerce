@@ -35,8 +35,7 @@ class StripeController
     }
     public function checkout($request, $response, $args)
     {
-        $body = $request->getBody()->getContents();
-        $data = json_decode($body, true);
+        $data = $_SESSION['checkout'];
 
         if (!$data) {
             $response->getBody()->write(json_encode([
@@ -49,6 +48,8 @@ class StripeController
 
         //Validate stock
         $isStock = true;
+        $msg = "";
+        $details = [];
         foreach ($data as $item) {
             $stock = $this->productService->getProduct($item['id'])->getStock();
             $quantity = (int) $item['quantity'];
@@ -163,6 +164,7 @@ class StripeController
                 if ($type === 'cart') {
                     $this->cartService->deleteUserCart($session->metadata->user_id);
                 }
+                unset($_SESSION["checkout"]);
 
                 // SEND EMAIL
                 $email = $session->customer_details->email;
