@@ -39,7 +39,8 @@ require_once __DIR__ . '/layout/header.php';
                         </div>
                         <div class="col-sm-6">
                             <ol class="breadcrumb float-sm-right">
-                                <li class="breadcrumb-item"><a href="home">Home</a></li>
+                                <li class="breadcrumb-item"><a href="<?php echo ROOT?>">Home</a></li>
+                                <li class="breadcrumb-item"><a href="<?php echo ROOT ."/admin"?>">Admin</a></li>
                                 <li class="breadcrumb-item active">Sales</li>
                             </ol>
                         </div>
