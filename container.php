@@ -25,11 +25,13 @@ use App\Repositories\Contracts\ProductInformationRepositoryInterface;
 use App\Repositories\Contracts\ReviewRepositoryInterface;
 use App\Repositories\Contracts\SaleItemRepositoryInterface;
 use App\Repositories\Contracts\SaleRepositoryInterface;
+use App\Repositories\Contracts\ShippingAddressRepositoryInterface;
 use App\Repositories\ProductImageRepository;
 use App\Repositories\ProductInformationRepository;
 use App\Repositories\ReviewRepository;
 use App\Repositories\SaleItemRepository;
 use App\Repositories\SaleRepository;
+use App\Repositories\ShippingAddressRepository;
 use App\Services\CategoryService;
 use App\Services\MailService;
 use App\Services\ProductImageService;
@@ -38,6 +40,8 @@ use App\Services\ProductService;
 use App\Services\ReviewService;
 use App\Services\SaleItemService;
 use App\Services\SaleService;
+use App\Services\ShippingAddressService;
+use Rakit\Validation\Validator;
 
 $container = new Container();
 
@@ -71,4 +75,7 @@ $container->set(StripeClient::class, function () {
     return new StripeClient(Env::get("STRIPE_SECRET"));
 });
 $container->set(StripeService::class,  DI\autowire());
+$container->set(ShippingAddressRepositoryInterface::class, Di\autowire(ShippingAddressRepository::class));
+$container->set(ShippingAddressService::class, Di\autowire());
+$container->set(Validator::class,  DI\autowire());
 return $container;
