@@ -15,6 +15,10 @@ interface ReviewRepositoryInterface
 
     public function findByProductId(int $id): array;
 
+    public function findRecentByProductId(int $id): array;
+
+    public function findActiveByUserId(int $id): array;
+
     public function findByActive(int $active): array;
 
     public function findByUserId(int $id): array;

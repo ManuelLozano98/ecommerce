@@ -46,9 +46,16 @@ class ReviewService
     {
         return $this->repository->findByProductId($id);
     }
+    public function getRecentReviewsByProduct($id)
+    {
+        return $this->repository->findRecentByProductId($id);
+    }
     public function getReviewsByUser($id)
     {
         return $this->repository->findByUserId($id);
+    }
+    public function getActiveReviewsByUser($id){
+        return $this->repository->findActiveByUserId($id);
     }
     public function getReviewByProductIdAndUserId($productId, $userId)
     {

@@ -42,6 +42,24 @@ class ReviewRepository implements ReviewRepositoryInterface
         }
         return $reviews;
     }
+    public function findRecentByProductId(int $id): array
+    {
+        $data = DatabaseHelper::getDataPreparedQuery("SELECT * FROM reviews WHERE product_id = ? AND active = 1 ORDER BY GREATEST(created_at, updated_at) DESC", "i", $id);
+        $reviews = [];
+        foreach ($data as $review) {
+            $reviews[] = new Review($review);
+        }
+        return $reviews;
+    }
+    public function findActiveByUserId(int $id): array
+    {
+        $data = DatabaseHelper::getDataPreparedQuery("SELECT * FROM reviews WHERE user_id = ? AND active = 1", "i", $id);
+        $reviews = [];
+        foreach ($data as $review) {
+            $reviews[] = new Review($review);
+        }
+        return $reviews;
+    }
     public function findByUserId(int $id): array
     {
         $data = DatabaseHelper::getDataPreparedQuery("SELECT * FROM reviews WHERE user_id = ?", "i", $id);
