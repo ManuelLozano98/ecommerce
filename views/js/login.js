@@ -22,7 +22,7 @@ $("#loginForm").submit(function (e) {
           loginInvalid();
         }
         if (data.success) {
-          window.location.href = BASE_URL;
+          window.location.href = data.redirect || BASE_URL;
         }
       })
       .catch((error) => {
