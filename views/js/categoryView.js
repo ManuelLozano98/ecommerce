@@ -72,7 +72,7 @@ $(document).ready(() => {
     const slider = $("#slider").data("ionRangeSlider");
     if (slider) {
       const defaultFrom = 0;
-      const defaultTo = parseInt(
+      const defaultTo = parseFloat(
         $("#slider").data("ionRangeSlider").options.max,
       );
       if (slider.result.from == defaultFrom && slider.result.to == defaultTo) {
