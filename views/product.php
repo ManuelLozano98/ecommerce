@@ -52,6 +52,54 @@
             background: #FFA41C;
             border-color: #FF8F00;
         }
+
+        .rating {
+            --size: 30px;
+            --mask: conic-gradient(from -18deg at 61% 34.5%, #0000 108deg, #000 0) 0 / var(--size),
+                conic-gradient(from 270deg at 39% 34.5%, #0000 108deg, #000 0) 0 / var(--size),
+                conic-gradient(from 54deg at 68% 56%, #0000 108deg, #000 0) 0 / var(--size),
+                conic-gradient(from 198deg at 32% 56%, #0000 108deg, #000 0) 0 / var(--size),
+                conic-gradient(from 126deg at 50% 69%, #0000 108deg, #000 0) 0 / var(--size);
+            --bg: linear-gradient(90deg, #f39c12 calc(var(--size) * var(--val)), #ddd 0);
+            height: var(--size);
+            width: calc(var(--size) * 5);
+            border: 0;
+            /* Firefox adds a default border to ranges */
+            -webkit-appearance: none;
+            appearance: none;
+            cursor: pointer;
+
+            /* Chrome and Safari */
+            &::-webkit-slider-runnable-track {
+                height: 100%;
+                mask: var(--mask);
+                mask-composite: intersect;
+                background: var(--bg);
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            &::-webkit-slider-thumb {
+                opacity: 0;
+            }
+
+            /* Firefox */
+            &::-moz-range-track {
+                height: 100%;
+                mask: var(--mask);
+                mask-composite: intersect;
+                background: var(--bg);
+                print-color-adjust: exact;
+            }
+
+            &::-moz-range-thumb {
+                opacity: 0;
+            }
+        }
+
+        .user-panel .info {
+            overflow-wrap: anywhere;
+        }
     </style>
     <?php require_once __DIR__ . '/layout/endheader.php'; ?>
 
@@ -70,6 +118,8 @@
         $save = round($price - $total, 2);
         $stock = $product->getStock();
         $colors = $details?->getColorOptions();
+        $user = $_SESSION["user"] ?? NULL;
+        $userId = $user ? $user["data"]->getId() : NULL;
 
         if ($colors !== null && !empty($colors)) {
             $colors = $colors['available_colors'];
@@ -443,34 +493,58 @@
                                 <div class="tab-content p-3" id="nav-tabContent">
                                     <div class="tab-pane fade" id="product-desc" role="tabpanel" aria-labelledby="product-desc-tab"> <?php echo $product->getDescription() ?></div>
                                     <div class="tab-pane fade show active" id="product-comments" role="tabpanel" aria-labelledby="product-comments-tab">
-                                        <?php foreach ($data['reviews'] as $review): ?>
-                                            <div class="user-panel mt-3 pb-3 mb-3 d-flex">
-                                                <div class="image">
-                                                    <img src="<?php echo UPLOADS_IMAGES . "/" . $review['user']->getImage() ?>" class="img-circle elevation-2" alt="User Image">
+                                        <button class="btn btn-outline-dark" id="customer-review">Write a customer review</button>
+                                        <div class="card shadow p-4 d-none" id="review-card">
+                                            <form method="POST" id="review-form">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Title</label>
+                                                    <input id="title-review" type="text" class="form-control" placeholder="Write a title">
                                                 </div>
-                                                <div class="info">
+
+                                                <!-- Text -->
+                                                <div class="mb-3">
+                                                    <label class="form-label">Comment</label>
+                                                    <textarea id="comment-review" class="form-control" rows="4" placeholder="Write your opinion"></textarea>
+                                                </div>
+
+                                                <!-- Rating -->
+                                                <div class="mb-3">
+                                                    <label class="form-label d-block">Rating</label>
+                                                    <div class="star-rating">
+                                                        <input id="rating-review" type="range" min="0.5" max="5" step="0.5" value="2.5"
+                                                            class="rating" style="--val:2.5"
+                                                            oninput="this.style='--val:'+this.value" name="rating">
+
+                                                    </div>
+                                                    <input type="hidden" id="rating" name="rating" value="0">
+                                                </div>
+
+                                                <button id="post-review" data-review="<?php echo $userId ?>" type="submit" class="btn btn-primary">Post review</button>
+                                            </form>
+                                        </div>
+                                        <?php foreach ($data['reviews'] as $review): ?>
+                                            <div class="d-flex mt-3 pb-3 border-bottom">
+                                                <div class="flex-shrink-0 mr-2">
+                                                    <img src="<?php echo UPLOADS_IMAGES . "/" . $review['user']->getImage() ?>" class="img-circle elevation-2" style="width:40px; height:40px; object-fit:cover;" alt="User Image">
+                                                </div>
+                                                <div class="info ms-3 flex-grow-1" style="min-width:0;">
                                                     <strong><?php echo $review['user']->getUsername(); ?></strong>
                                                     <span class="stars">
-                                                        <?php
-                                                        for ($i = 1; $i <= 5; $i++) {
-                                                            if ($i <= floor($data['rating']['average'])) {
-                                                                echo '<i class="fas fa-star"></i>';
-                                                            } elseif ($i - 1 < $data['rating']['average'] && $i > floor($data['rating']['average'])) {
-                                                                echo '<i class="fas fa-star-half-alt"></i>';
-                                                            } else {
-                                                                echo '<i class="far fa-star"></i>';
-                                                            }
-                                                        }
-                                                        ?>
+                                                        <?php renderStars($review['review']->getRating()); ?>
                                                     </span>
                                                     <p class="text-muted">Reviewed in <?php echo $review['review']->getCreatedAt(); ?><span>
-                                                            <?php if ($review['review']->getCreatedAt() !== $review['review']->getUpdatedAt()): ?>
-                                                                <?php echo "Updaded in " . $review['review']->getUpdatedAt(); ?>
+                                                            <?php if ($review['review']->getUpdatedAt()): ?>
+                                                                <?php if ($review['review']->getCreatedAt() !== $review['review']->getUpdatedAt()): ?>
+                                                                    <?php echo "Updaded in " . $review['review']->getUpdatedAt(); ?>
                                                         </span>
                                                     <?php endif ?>
+                                                <?php endif ?>
 
                                                     </p>
-                                                    <p><?php echo $review['review']->getComment(); ?></p>
+                                                    <div class="text-break">
+                                                        <p class="text-break"><strong><?php echo $review['review']->getTitle(); ?></strong>
+                                                            <?php echo $review['review']->getComment(); ?></p>
+                                                    </div>
                                                 </div>
                                             </div>
                                         <?php endforeach; ?>
