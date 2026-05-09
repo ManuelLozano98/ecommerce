@@ -47,7 +47,7 @@ class CartController
                 throw new \Exception('Invalid product');
             }
 
-            $product->setCategory($this->categoryService->getCategory($product->getId()));
+            $product->setCategory($this->categoryService->getCategory($product->getCategoryId()));
             if (!isset($_SESSION['cart'][$productId])) {
                 $_SESSION['cart'][$productId] = $cartItem;
             } else {
