@@ -14,7 +14,7 @@ $(document).ready(function () {
 });
 
 function checkout(products) {
-  fetch(`${BASE_URL}/checkout`, {
+  fetch(`${BASE_URL}/checkout/start`, {
     headers: {
       "X-Requested-With": "XMLHttpRequest",
       Accept: "application/json",
@@ -24,11 +24,12 @@ function checkout(products) {
   })
     .then((res) => res.json())
     .then((data) => {
+      if (data.redirect) {
+        window.location.href = data.redirect;
+        return;
+      }
       if (data.message) {
         notifyErrorResponse(data);
-      }
-      if (data.clientSecret) {
-        location.href = `${BASE_URL}/checkout?client=${data.clientSecret}`;
       }
     })
     .catch((err) => console.error(err));
