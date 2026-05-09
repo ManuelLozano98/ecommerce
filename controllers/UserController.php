@@ -10,6 +10,9 @@ use App\Services\RoleService;
 use App\Services\UserRoleService;
 use Exception;
 use App\Models\Cart;
+use App\Services\ProductService;
+use App\Services\ReviewService;
+use App\Services\SaleService;
 
 class UserController
 {
@@ -19,14 +22,20 @@ class UserController
     private UserRoleService $userRoleService;
     private RoleService $roleService;
     private CartService $cartService;
+    private SaleService $saleService;
+    private ReviewService $reviewService;
+    private ProductService $productService;
 
-    public function __construct(PhpRenderer $renderer, UserService $userService, UserRoleService $userRoleService, RoleService $roleService, CartService $cartService)
+    public function __construct(PhpRenderer $renderer, UserService $userService, UserRoleService $userRoleService, RoleService $roleService, CartService $cartService, SaleService $saleService, ReviewService $reviewService, ProductService $productService)
     {
         $this->renderer = $renderer;
         $this->userService = $userService;
         $this->userRoleService = $userRoleService;
         $this->roleService = $roleService;
         $this->cartService = $cartService;
+        $this->saleService = $saleService;
+        $this->reviewService = $reviewService;
+        $this->productService = $productService;
     }
     public function index($request, $response, $args)
     {
@@ -51,7 +60,32 @@ class UserController
         $cart = $request->getAttribute("cart");
         $userId = $_SESSION["user"]["data"]->getId();
         $user = $this->userService->getUser($userId);
-        return $this->renderer->render($response, "my-profile.php", ["user" => $user, "cart" => $cart]);
+        $orders = $this->saleService->getPurchasesByUser($user->getId());
+        $reviews = $this->reviewService->getActiveReviewsByUser($user->getId());
+        $buys = [];
+        $reviewData = [];
+        foreach ($orders as $order) {
+            if (strtolower($order->sales['status']) === "completed") {
+                foreach ($order->items as &$item) {
+                    $product = $this->productService->getProduct($item->getProductId());
+                    $itemArray = $item->toArray();
+                    $itemArray['name'] = $product->getName();
+                    $itemArray['image'] = $product->getImage();
+                    $item = $itemArray;
+                }
+                unset($item);
+                $buys[] = $order;
+            }
+        }
+        foreach ($reviews as $review) {
+            $data = $review->toArray();
+            $product = $this->productService->getProduct($review->getProductId());
+            $data['image'] = $product->getImage();
+            $data['name'] = $product->getName();
+            $data['slug'] = $product->getSlug();
+            $reviewData[] = $data;
+        }
+        return $this->renderer->render($response, "my-profile.php", ["userData" => $user, "cart" => $cart, 'orders' => $buys, "reviews" => $reviewData]);
     }
 
     public function indexAdmin($request, $response, $args)
@@ -80,6 +114,8 @@ class UserController
             // Login
             $result = $this->userService->logIn($data);
             if (isset($_SESSION['user'])) {
+                $redirect = $_SESSION["redirect_after_login"] ?? ROOT;
+                unset($_SESSION["redirect_after_login"]);
                 $userRoles = $this->userRoleService->getUserRolesbyUserId($_SESSION['user']['data']->getId());
                 foreach ($userRoles as $userRole) {
                     $roles = $this->roleService->getRole($userRole->getRoleId());
@@ -115,7 +151,7 @@ class UserController
                 }
                 unset($_SESSION['cart']);
             }
-            $response->getBody()->write(json_encode(['success' => $result]));
+            $response->getBody()->write(json_encode(['success' => $result, 'redirect' => $redirect]));
             return $response->withHeader('Content-Type', 'application/json')->withStatus(200);
         } catch (InvalidCredentialsException $e) {
             $response->getBody()->write(json_encode(['error' => $e->getMessage()]));
