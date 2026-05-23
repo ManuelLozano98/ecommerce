@@ -31,6 +31,12 @@ require_once __DIR__ . '/../config/constants.php';
     <!-- Tempus Dominus -->
     <link rel="stylesheet"
         href="<?php echo ADMINLTE ?>plugins/tempusdominus-bootstrap-4/css/tempusdominus-bootstrap-4.min.css">
+    <style>
+        .fa-eye-slash,
+        .fa-eye {
+            cursor: pointer;
+        }
+    </style>
 </head>
 
 <body class="hold-transition sidebar-mini">
@@ -90,248 +96,9 @@ require_once __DIR__ . '/../config/constants.php';
                 </div><!-- /.container-fluid -->
             </section>
 
-            <div class="modal fade" id="modal-default">
-                <div class="modal-dialog">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h4 class="modal-title">Add Sale</h4>
-                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                <span>&times;</span>
-                            </button>
-                        </div>
-                        <div class="modal-body">
-                            <ul class="nav nav-tabs" id="formTabs" role="tablist">
-                                <li class="nav-item">
-                                    <a class="nav-link active" id="tab1-tab" data-toggle="tab" href="#tab1"
-                                        role="tab">Sales data</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link" id="tab2-tab" data-toggle="tab" href="#tab2"
-                                        role="tab">Products</a>
-                                </li>
-                            </ul>
-                            <form name="form" id="add-sale" method="POST">
-                                <div class="tab-content mt-3">
-                                    <!-- Tab 1 -->
-                                    <div class="tab-pane fade show active" id="tab1" role="tabpanel">
-                                        <div class="row">
-                                            <div class="col-sm-12 form-group">
-                                                <label for="users" class="form-label fw-semibold">Users to add to the
-                                                    sale</label>
-                                                <div class="select2-green">
-                                                    <select class="select2" multiple="multiple"
-                                                        data-placeholder="Select Users"
-                                                        data-dropdown-css-class="select2-green" style="width: 100%;"
-                                                        name="id_user" id="users">
-                                                    </select>
-                                                </div>
-                                            </div>
-                                            <div class="col-sm-12 form-group">
-                                                <label for="datetime">Date and time:</label>
-                                                <div class="input-group date" id="reservationdatetime"
-                                                    data-target-input="nearest">
-                                                    <input type="text" id="datetime"
-                                                        class="form-control datetimepicker-input"
-                                                        data-target="#reservationdatetime" name="created_at">
-                                                    <div class="input-group-append" data-target="#reservationdatetime"
-                                                        data-toggle="datetimepicker">
-                                                        <div class="input-group-text"><i class="fa fa-calendar"></i>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="col-sm-12 form-group">
-                                                <label for="payment_method" class="form-label">Payment method</label>
-                                                <select name="payment_method" class="form-control" id="payment_method">
-                                                    <option value="Credit card">Credit/Debit Card</option>
-                                                    <option value="Paypal">PayPal</option>
-                                                    <option value="Apple_Google_pay">Apple Pay / Google Pay</option>
-                                                    <option value="Cash">Cash</option>
-                                                </select>
-                                            </div>
-                                            <div class="col-sm-12 form-group">
-                                                <label for="status" class="form-label">Status</label>
-                                                <select class="form-control" data-placeholder="Select status"
-                                                    name="status" id="status">
-                                                    <option name="Pending">Pending</option>
-                                                    <option name="Completed">Completed</option>
-                                                    <option name="Processing">Processing</option>
-                                                    <option name="Canceled">Canceled</option>
-                                                    <option name="Refunded">Refunded</option>
-                                                    <option name="Failed">Failed</option>
-                                                </select>
-                                            </div>
-                                            <div class="col-sm-12 form-group">
-                                                <label for="total" class="form-label">Total</label>
-                                                <div class="input-group">
-                                                    <input type="text" inputmode="decimal" pattern="^\d+([.,]\d{1,2})?$"
-                                                        name="total_amount" class="form-control" id="total" />
-                                                    <div class="input-group-append">
-                                                        <span class="input-group-text">€</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                        </div>
-                                    </div>
-                                    <div class="tab-pane fade" id="tab2" role="tabpanel">
-                                        <div class="form-group">
-                                            <label for="articles" class="form-label fw-semibold">Products to add to the
-                                                sale</label>
-                                            <div class="select2-green">
-                                                <select class="select2" multiple="multiple"
-                                                    data-placeholder="Select articles"
-                                                    data-dropdown-css-class="select2-green" style="width: 100%;"
-                                                    name="id_article" id="articles">
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                </div>
-                                <div class="modal-footer justify-content-between">
-                                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-                                    <button id="save" type="button" class="btn btn-primary">Save
-                                        changes</button>
-                                </div>
-
-                            </form>
-                        </div>
-
-                    </div>
-                    <!-- /.modal-content -->
-                </div>
-                <!-- /.modal-dialog -->
-            </div>
-            <!-- /.modal -->
-
-            <div class="modal fade" id="modal-view">
-                <div class="modal-dialog modal-lg">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h4 class="modal-title">Sale Details</h4>
-                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                <span>&times;</span>
-                            </button>
-                        </div>
-                        <div class="modal-body" id="modal-body">
-                        </div>
-                        <div class="modal-footer">
-                            <div class="pagination" id="pagination-container"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-
-            <div class="modal fade" id="modal-edit-default">
-                <div class="modal-dialog">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h4 class="modal-title">Edit Sale</h4>
-                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                <span>&times;</span>
-                            </button>
-                        </div>
-                        <div class="modal-body">
-                            <ul class="nav nav-tabs" id="edit-formTabs" role="tablist">
-                                <li class="nav-item">
-                                    <a class="nav-link active" id="edit-tab1-tab" data-toggle="tab" href="#edit-tab1"
-                                        role="tab">Sales data</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link" id="edit-tab2-tab" data-toggle="tab" href="#edit-tab2"
-                                        role="tab">Products</a>
-                                </li>
-                            </ul>
-                            <form name="form-edit" id="form-edit" method="POST">
-                                <input type="hidden" name="id" id="edit-idsale">
-                                <div class="tab-content mt-3">
-                                    <!-- Tab 1 -->
-                                    <div class="tab-pane fade show active" id="edit-tab1" role="tabpanel">
-                                        <div class="row">
-                                            <div class="col-sm-12 form-group">
-                                                <label for="users" class="form-label fw-semibold">Edit user</label>
-                                                <select class="form-control" data-placeholder="Select User"
-                                                    name="id_user" id="edit-users">
-                                                </select>
-                                            </div>
-                                            <div class="col-sm-12 form-group">
-                                                <label for="edit-datetime">Date and time:</label>
-                                                <div class="input-group date" id="edit-datetime"
-                                                    data-target-input="nearest">
-                                                    <input type="text" id="edit-datetime"
-                                                        class="form-control datetimepicker-input"
-                                                        data-target="#edit-datetime" name="created_at">
-                                                    <div class="input-group-append" data-target="#edit-datetime"
-                                                        data-toggle="datetimepicker">
-                                                        <div class="input-group-text"><i class="fa fa-calendar"></i>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="col-sm-12 form-group">
-                                                <label for="edit-payment_method" class="form-label">Payment
-                                                    method</label>
-                                                <select name="payment_method" class="form-control"
-                                                    id="edit-payment_method">
-                                                    <option value="Credit card">Credit/Debit Card</option>
-                                                    <option value="Paypal">PayPal</option>
-                                                    <option value="Apple_Google_pay">Apple Pay / Google Pay</option>
-                                                    <option value="Cash">Cash</option>
-                                                </select>
-                                            </div>
-                                            <div class="col-sm-12 form-group">
-                                                <label for="edit-status" class="form-label">Status</label>
-                                                <select class="form-control" data-placeholder="Select status"
-                                                    name="status" id="edit-status">
-                                                    <option name="Pending">Pending</option>
-                                                    <option name="Completed">Completed</option>
-                                                    <option name="Processing">Processing</option>
-                                                    <option name="Canceled">Canceled</option>
-                                                    <option name="Refunded">Refunded</option>
-                                                    <option name="Failed">Failed</option>
-                                                </select>
-                                            </div>
-                                            <div class="col-sm-12 form-group">
-                                                <label for="edit-total" class="form-label">Total</label>
-                                                <div class="input-group">
-                                                    <input type="text" inputmode="decimal" pattern="^\d+([.,]\d{1,2})?$"
-                                                        name="total_amount" class="form-control" id="edit-total" />
-                                                    <!-- <input type="number" min="0" step="1.99" class="form-control" id="total"
-                                                name="total" placeholder="Enter total"> -->
-                                                    <div class="input-group-append">
-                                                        <span class="input-group-text">€</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="tab-pane fade" id="edit-tab2" role="tabpanel">
-                                        <div class="header">
-                                            <h4 class="title">Add Product</h4>
-                                            <button class="btn btn-success" id="addProductBtn"><i
-                                                    class="fa fa-plus-circle"></i>
-                                                Add</button>
-                                        </div>
-
-                                    </div>
-
-                                </div>
-                        </div>
-                        <div class="modal-footer justify-content-between">
-                            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-                            <button id="edit-save" type="button" class="btn btn-primary">Save changes</button>
-                        </div>
-                    </div>
-                    </form>
-                </div>
-
-            </div>
-
             <!-- Main content -->
             <section class="content">
-                <div class="row">
+                <div class="row ml-3">
                     <div class="col-md-3">
                         <!-- Profile Image -->
                         <div class="card card-primary card-outline">
@@ -401,6 +168,7 @@ require_once __DIR__ . '/../config/constants.php';
                                     <li class="nav-item"><a class="nav-link active" href="#reviews" data-toggle="tab">Reviews</a></li>
                                     <li class="nav-item"><a class="nav-link" href="#orders" data-toggle="tab">Orders</a></li>
                                     <li class="nav-item"><a class="nav-link" href="#settings" data-toggle="tab">Settings</a></li>
+                                    <li class="nav-item"><a class="nav-link" href="#security" data-toggle="tab">Security</a></li>
                                 </ul>
                             </div><!-- /.card-header -->
                             <div class="card-body">
@@ -511,52 +279,129 @@ require_once __DIR__ . '/../config/constants.php';
                                     <!-- /.tab-pane -->
 
                                     <div class="tab-pane" id="settings">
-                                        <form class="form-horizontal">
-                                            <div class="form-group row">
-                                                <label for="inputName" class="col-sm-2 col-form-label">Name</label>
-                                                <div class="col-sm-10">
-                                                    <input type="email" class="form-control" id="inputName" placeholder="Name">
-                                                </div>
-                                            </div>
-                                            <div class="form-group row">
-                                                <label for="inputEmail" class="col-sm-2 col-form-label">Phone</label>
-                                                <div class="col-sm-10">
-                                                    <input type="email" class="form-control" id="inputEmail" placeholder="Email">
-                                                </div>
-                                            </div>
-                                            <div class="form-group row">
-                                                <label for="inputName2" class="col-sm-2 col-form-label">Address</label>
-                                                <div class="col-sm-10">
-                                                    <input type="text" class="form-control" id="inputName2" placeholder="Name">
-                                                </div>
-                                            </div>
-                                            <div class="form-group row">
-                                                <label for="inputExperience" class="col-sm-2 col-form-label">Avatar</label>
-                                                <div class="col-sm-10">
-                                                    <textarea class="form-control" id="inputExperience" placeholder="Experience"></textarea>
-                                                </div>
-                                            </div>
-                                            <div class="form-group row">
-                                                <label for="inputSkills" class="col-sm-2 col-form-label">Skills</label>
-                                                <div class="col-sm-10">
-                                                    <input type="text" class="form-control" id="inputSkills" placeholder="Skills">
-                                                </div>
-                                            </div>
-                                            <div class="form-group row">
-                                                <div class="offset-sm-2 col-sm-10">
-                                                    <div class="checkbox">
-                                                        <label>
-                                                            <input type="checkbox"> I agree to the <a href="#">terms and conditions</a>
-                                                        </label>
+                                        <div class="card">
+                                            <div class="card-body register-card-body">
+                                                <form class="form-horizontal" name="form-settings" enctype="multipart/form-data">
+                                                    <div class="form-group row">
+                                                        <label for="inputName" class="col-sm-2 col-form-label">Name</label>
+                                                        <div class="col-sm-10">
+                                                            <input type="text" name="name" class="form-control" id="inputName" placeholder="Name">
+                                                        </div>
                                                     </div>
-                                                </div>
+                                                    <div class="form-group row">
+                                                        <label for="inputPhone" class="col-sm-2 col-form-label">Phone</label>
+                                                        <div class="col-sm-10">
+                                                            <input type="number" name="phone" class="form-control" id="inputPhone" placeholder="Phone">
+                                                        </div>
+                                                    </div>
+                                                    <div class="form-group row">
+                                                        <label for="inputAddress" class="col-sm-2 col-form-label">Address</label>
+                                                        <div class="col-sm-10">
+                                                            <input type="text" name="address" class="form-control" id="inputAddress" placeholder="Address">
+                                                        </div>
+                                                    </div>
+                                                    <div class="form-group row">
+                                                        <label for="inputAvatar" class="col-sm-2 col-form-label">Avatar</label>
+                                                        <div class="col-sm-10">
+                                                            <div class="custom-file">
+                                                                <input type="file" name="image" class="custom-file-input" id="customFile">
+                                                                <label class="custom-file-label" for="customFile">Choose file</label>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="form-group row">
+                                                        <div class="offset-sm-2 col-sm-10">
+                                                            <div id="settingsMessage"></div>
+                                                            <button type="submit" class="btn btn-danger">Update Settings</button>
+                                                        </div>
+                                                    </div>
+                                                </form>
                                             </div>
-                                            <div class="form-group row">
-                                                <div class="offset-sm-2 col-sm-10">
-                                                    <button type="submit" class="btn btn-danger">Submit</button>
-                                                </div>
+                                        </div>
+                                    </div>
+                                    <!-- /.tab-pane -->
+                                    <div class="tab-pane" id="security">
+                                        <div class="card">
+                                            <div class="card-body register-card-body">
+                                                <form class="form-horizontal" name="form-security">
+
+                                                    <div class="form-group row">
+                                                        <label for="inputCurrentEmail" class="col-sm-2 col-form-label">Current Email</label>
+                                                        <div class="col-sm-10">
+                                                            <input type="email" class="form-control" id="inputCurrentEmail" disabled placeholder="Email" value="<?= $userData->getEmail() ?>">
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="form-group row">
+                                                        <label for="inputEmail" class="col-sm-2 col-form-label">Email</label>
+                                                        <div class="col-sm-10">
+                                                            <input type="email" name="email" class="form-control" id="inputEmail" placeholder="Email">
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="form-group row">
+                                                        <label for="currentPassword" class="col-sm-2 col-form-label">
+                                                            Current Password
+                                                            <span class="text-red font-bold" title="Required field">*</span>
+                                                        </label>
+                                                        <div class="col-sm-10">
+                                                            <div class="input-group mb-3">
+                                                                <input type="password" name="password" class="form-control" id="currentPassword" placeholder="Current Password">
+                                                                <div class="input-group-append">
+                                                                    <div class="input-group-text">
+                                                                        <span id="eyepassword" class="fas fa-eye"></span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="form-group row">
+                                                        <label for="newPassword" class="col-sm-2 col-form-label">
+                                                            New Password
+                                                            <span class="text-red font-bold" title="Required field">*</span>
+                                                        </label>
+                                                        <div class="col-sm-10">
+                                                            <div class="input-group mb-3">
+                                                                <input type="password" name="new-password" class="form-control" id="newPassword" placeholder="New Password">
+                                                                <div class="input-group-append">
+                                                                    <div class="input-group-text">
+                                                                        <span id="eyenewpassword" class="fas fa-eye"></span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="form-group row">
+                                                        <label for="confirmPassword" class="col-sm-2 col-form-label">
+                                                            Confirm Password
+                                                            <span class="text-red font-bold" title="Required field">*</span>
+                                                        </label>
+                                                        <div class="col-sm-10">
+                                                            <div class="input-group mb-3">
+                                                                <input type="password" name="re-password" class="form-control" id="confirmPassword" placeholder="Confirm Password">
+                                                                <div class="input-group-append">
+                                                                    <div class="input-group-text">
+                                                                        <span id="eyerepassword" class="fas fa-eye"></span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="form-group row">
+                                                        <div class="offset-sm-2 col-sm-10">
+                                                            <div id="securityMessage"></div>
+                                                            <button type="submit" class="btn btn-danger">
+                                                                Update Security
+                                                            </button>
+                                                        </div>
+                                                    </div>
+
+
+                                                </form>
                                             </div>
-                                        </form>
+                                        </div>
                                     </div>
                                     <!-- /.tab-pane -->
                                 </div>
@@ -608,9 +453,9 @@ require_once __DIR__ . '/../config/constants.php';
     <!-- AdminLTE App -->
     <script src="<?php echo ADMINLTE ?>dist/js/adminlte.min.js"></script>
     <!-- Generic script for utilities -->
-    <script type="text/javascript" src="views/js/utils.js"></script>
+    <script type="text/javascript" src="<?php echo ROOT . "/" ?>views/js/helper/utils.js"></script>
     <!-- Page specific script -->
-    <script type="text/javascript" src="views/js/sale.js"></script>
+    <script type="text/javascript" src="<?php echo ROOT . "/" ?>views/js/profile.js"></script>
 </body>
 
 </html>

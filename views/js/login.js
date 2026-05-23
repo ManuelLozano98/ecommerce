@@ -1,5 +1,5 @@
 const BASE_URL = "/Ecommerce";
-
+setupPasswordButtons();
 $("#loginForm").submit(function (e) {
   e.preventDefault();
   username = $("#username").val();
@@ -37,3 +37,25 @@ $("#loginForm").submit(function (e) {
       });
   }
 });
+
+function setupPasswordButtons() {
+  $("#passwordlock").click(function () {
+    toggleIcon(this.id);
+    toggleInput("password");
+  });
+}
+
+function toggleIcon(elementId) {
+  if ($("#" + elementId).attr("class") === "fas fa-lock") {
+    $("#" + elementId).attr("class", "fas fa-unlock");
+  } else {
+    $("#" + elementId).attr("class", "fas fa-lock");
+  }
+}
+function toggleInput(elementId) {
+  if ($("#" + elementId).attr("type") === "password") {
+    $("#" + elementId).attr("type", "text");
+  } else {
+    $("#" + elementId).attr("type", "password");
+  }
+}
