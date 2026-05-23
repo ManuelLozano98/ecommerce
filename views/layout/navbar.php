@@ -35,7 +35,7 @@ $admin = $user && !empty($user['roles']) && in_array('admin', $user['roles'], tr
         <!-- Dropdown -->
         <div class="dropdown-menu dropdown-menu-lg dropdown-menu-end p-2" style="min-width: 300px;">
           <a class="" href="<?php echo ROOT ?>/login"><button class="btn-primary fas btn-block mb-2 font-weight-bold p-2">Log In</button></a>
-          <p>New customer? <a href="<?php echo ROOT ?>/register">Start here</a></p>
+          <p>New customer? <a href="<?php echo ROOT ?>/sign-up">Start here</a></p>
         </div>
       </li>
     <?php else: ?>
@@ -92,7 +92,6 @@ $admin = $user && !empty($user['roles']) && in_array('admin', $user['roles'], tr
         </div>
       <?php endif; ?>
     </li>
-    <!-- Notifications Dropdown Menu -->
     <li class="nav-item">
       <a class="nav-link" data-widget="fullscreen" href="#" role="button">
         <i class="fas fa-expand-arrows-alt"></i>
