@@ -98,6 +98,14 @@ class CartService
         }
     }
 
+    public function deleteByUserAndProduct($userId, $id)
+    {
+        $result = $this->repository->deleteByUserAndProduct($userId, $id);
+        if (!$result) {
+            throw new DeleteException("Failed to delete cart with ID $id.");
+        }
+        return $result;
+    }
     public function save($cart)
     {
         if (!$this->user_repository->findById($cart->getUserId())) {

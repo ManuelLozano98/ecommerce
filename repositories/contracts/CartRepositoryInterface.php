@@ -21,4 +21,6 @@ interface CartRepositoryInterface
     public function delete(int $id): bool;
 
     public function deleteUserCart(int $userId): bool;
+
+    public function deleteByUserAndProduct(int $userId, int $id): bool;
 }

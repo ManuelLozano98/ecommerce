@@ -64,7 +64,7 @@
                                                     <div class="mt-2 small">
                                                         Quantity: <?= $item->getQuantity() ?>
                                                     </div>
-                                                    <button class="btn btn-sm btn-outline-danger mt-2">
+                                                    <button class="btn btn-sm btn-outline-danger mt-2 delete">
                                                         Delete
                                                     </button>
                                                 </div>
