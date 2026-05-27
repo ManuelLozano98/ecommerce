@@ -192,6 +192,14 @@ class PaginationHelper
                 'message' => 'Invalid JSON structure'
             ];
         }
+        if (empty($dataArray['data'])) {
+            return  [
+                'status' => 'success',
+                'recordsTotal' => 0,
+                'recordsFiltered' => 0,
+                'data' => []
+            ];
+        }
 
 
         $start = (int)($params['start'] ?? 0);
