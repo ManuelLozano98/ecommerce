@@ -7,6 +7,7 @@ require_once __DIR__ . "/layout/header.php";
 <title><?php echo SITE ?> | Thanks for your order!</title>
 <link rel="stylesheet" href="<?php echo ROOT ?>/assets/styles/web.css">
 <link rel="stylesheet" href="<?php echo ROOT ?>/assets/styles/index.css">
+<script src="<?php echo ROOT . "/" ?>views/js/helper/utils.js" defer></script>
 <script src="<?php echo ROOT . "/" ?>views/js/checkoutReturn.js" defer></script>
 <!-- Scripts -->
 <script src="<?php echo ADMINLTE ?>plugins/jquery/jquery.min.js"></script>
