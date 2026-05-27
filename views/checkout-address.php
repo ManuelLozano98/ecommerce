@@ -43,39 +43,39 @@
                                     <form method="POST" id="form">
                                         <div class=" card-body">
                                             <div class="form-group">
-                                                <label>Full Name</label>
-                                                <input type="text" name="full_name" class="form-control"
+                                                <label for="fullname">Full Name</label>
+                                                <input type="text" name="full_name" id="fullname" class="form-control"
                                                     value="<?= $address?->getFullName() ?? $userData->getName() ?>" required>
                                             </div>
 
 
                                             <div class="form-group">
-                                                <label>Phone</label>
-                                                <input type="text" name="phone" class="form-control"
+                                                <label for="phone">Phone</label>
+                                                <input type="text" name="phone" id="phone" inputmode="numeric" pattern="[0-9]+" oninput="this.value=this.value.replace(/[^0-9]/g,'')" class="form-control"
                                                     value="<?= $address?->getPhone() ?? $userData->getPhone() ?>" required>
                                             </div>
                                             <div class="form-group">
-                                                <label>Address</label>
-                                                <input type="text" name="address" class="form-control"
+                                                <label for="address">Address</label>
+                                                <input type="text" name="address" id="address" class="form-control"
                                                     value="<?= $address?->getAddress() ?? $userData->getAddress() ?>" required>
                                             </div>
 
                                             <div class="form-group">
-                                                <label>City</label>
-                                                <input type="text" name="city" class="form-control"
+                                                <label for="city">City</label>
+                                                <input type="text" name="city" id="city" class="form-control"
                                                     value="<?= $address?->getCity() ?? '' ?>" required>
                                             </div>
 
                                             <div class="form-row">
                                                 <div class="form-group col-md-6">
-                                                    <label>Postal code</label>
-                                                    <input type="text" name="postal_code" class="form-control"
+                                                    <label for="postal_code">Postal code</label>
+                                                    <input type="text" id="postal_code" inputmode="numeric" pattern="[0-9]+" oninput="this.value=this.value.replace(/[^0-9]/g,'')" name="postal_code" class="form-control"
                                                         value="<?= $address?->getPostalCode() ?? '' ?>" required>
                                                 </div>
 
                                                 <div class="form-group col-md-6">
-                                                    <label>State / Province</label>
-                                                    <input type="text" name="province" class="form-control"
+                                                    <label for="province">State / Province</label>
+                                                    <input type="text" id="province" name="province" class="form-control"
                                                         value="<?= $address?->getProvince() ?? '' ?>" required>
                                                 </div>
                                             </div>
