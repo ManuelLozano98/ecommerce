@@ -77,18 +77,12 @@ class Controller
         $isAjax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === "xmlhttprequest";
 
         if ($isAjax) {
-            $productsWithDiscount = $this->productInformationService->getWithDiscount();
             $products = $this->productService->getProductsRawFiltered($filters, $itemsPerPage, $offset);
             $total = $this->productService->countFiltered($filters);
 
             $productData = [];
 
             foreach ($products as $row) {
-                foreach ($productsWithDiscount as $productDiscount) {
-                    if ($productDiscount->getProductId() === $row['id']) {
-                        $row['price'] = round($row['price'] * (1 - $productDiscount->getDiscount() / 100), 2);
-                    }
-                }
                 $category = $this->categoryService->getCategory($row['category_id']);
 
                 $ratingStats = $this->reviewService->getProductRatingStats($row['id']);
@@ -99,6 +93,7 @@ class Controller
                     "name" => $row['name'],
                     "description" => $row['description'],
                     "price" => $row['price'],
+                    "final_price" => $row['final_price'],
                     "image" => $row['image'],
                     "slug" => $row['slug'],
                     "category" => $category->getSlug(),
@@ -119,17 +114,12 @@ class Controller
             return $response->withHeader('Content-Type', 'application/json');
         }
 
-        $productsWithDiscount = $this->productInformationService->getWithDiscount();
         $products = $this->productService->getProductsFiltered($filters, $itemsPerPage, $offset);
         $total = $this->productService->countFiltered($filters);
         $totalPages = ceil($total / $itemsPerPage);
 
         foreach ($products as $product) {
-            foreach ($productsWithDiscount as $productDiscount) {
-                if ($productDiscount->getProductId() === $product->getId()) {
-                    $product->setPrice(round($product->getPrice() * (1 - $productDiscount->getDiscount() / 100), 2));
-                }
-            }
+            $product = $product->product;
             $ratingStats = $this->reviewService->getProductRatingStats($product->getId());
             $reviewPerProduct[$product->getId()] = $ratingStats;
             $product->setCategory($this->categoryService->getCategoryByProduct($product));
@@ -186,18 +176,12 @@ class Controller
         $isAjax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === "xmlhttprequest";
 
         if ($isAjax) {
-            $productsWithDiscount = $this->productInformationService->getWithDiscount();
             $products =  $this->productService->getProductsRawFiltered($filters, $itemsPerPage, $offset);
             $total =  $this->productService->countFiltered($filters);
 
             $productData = [];
 
             foreach ($products as $row) {
-                foreach ($productsWithDiscount as $productDiscount) {
-                    if ($productDiscount->getProductId() === $row['id']) {
-                        $row['price'] = round($row['price'] * (1 - $productDiscount->getDiscount() / 100), 2);
-                    }
-                }
 
                 $productCategory =  $this->categoryService->getCategory($row['category_id']);
 
@@ -209,6 +193,7 @@ class Controller
                     "name" => $row['name'],
                     "description" => $row['description'],
                     "price" => $row['price'],
+                    "final_price" => $row['final_price'],
                     "image" => $row['image'],
                     "slug" => $row['slug'],
                     "category" => $productCategory->getSlug(),
@@ -228,17 +213,12 @@ class Controller
 
             return $response->withHeader('Content-Type', 'application/json');
         }
-        $productsWithDiscount = $this->productInformationService->getWithDiscount();
         $products =  $this->productService->getProductsFiltered($filters, $itemsPerPage, $offset);
         $total =  $this->productService->countFiltered($filters);
         $totalPages = ceil($total / $itemsPerPage);
 
         foreach ($products as $product) {
-            foreach ($productsWithDiscount as $productDiscount) {
-                if ($productDiscount->getProductId() === $product->getId()) {
-                    $product->setPrice(round($product->getPrice() * (1 - $productDiscount->getDiscount() / 100), 2));
-                }
-            }
+            $product = $product->product;
             $ratingStats =  $this->reviewService->getProductRatingStats($product->getId());
             $reviewPerProduct[$product->getId()] = $ratingStats;
             $product->setCategory($this->categoryService->getCategoryByProduct($product));

@@ -202,6 +202,7 @@ class ProductRepository implements ProductRepositoryInterface
         $sql = "
         SELECT 
             p.*,
+            ROUND(p.price * (1 - COALESCE(pi.discount,0) / 100),2) AS final_price,
             COUNT(DISTINCT si.id) as total_sales,
             AVG(DISTINCT r.rating) as avg_rating
         FROM products p
@@ -209,6 +210,7 @@ class ProductRepository implements ProductRepositoryInterface
         LEFT JOIN sales s ON s.id = si.sale_id 
             AND LOWER(s.status) = 'completed'
         LEFT JOIN reviews r ON r.product_id = p.id
+        LEFT JOIN products_information pi ON pi.product_id = p.id
         WHERE p.active = 1
     ";
 
@@ -264,11 +266,11 @@ class ProductRepository implements ProductRepositoryInterface
                 break;
 
             case 'price_asc':
-                $sql .= " ORDER BY p.price ASC";
+                $sql .= " ORDER BY final_price ASC";
                 break;
 
             case 'price_desc':
-                $sql .= " ORDER BY p.price DESC";
+                $sql .= " ORDER BY final_price DESC";
                 break;
 
             default:

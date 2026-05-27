@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Dtos\ProductDTO;
 use App\Models\Product;
 use App\Exceptions\InsertException;
 use App\Exceptions\UpdateException;
@@ -135,7 +136,7 @@ class ProductService
         $products = $this->repository->applyFilters($filters, $limit, $offset);
         $data = [];
         foreach ($products as $row) {
-            $data[] = new Product($row);
+            $data[] = new ProductDTO(new Product($row), $row['final_price']);
         }
         return $data;
     }
