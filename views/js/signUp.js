@@ -1,4 +1,3 @@
-const BASE_URL = "/Ecommerce";
 $(document).ready(function () {
   setup();
   verifyForm();

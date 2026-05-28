@@ -1,4 +1,3 @@
-const BASE_URL = "/Ecommerce";
 setupPasswordButtons();
 $("#loginForm").submit(function (e) {
   e.preventDefault();

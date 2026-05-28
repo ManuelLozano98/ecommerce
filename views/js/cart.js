@@ -1,5 +1,3 @@
-const BASE_URL = "/Ecommerce";
-
 $(document).ready(function () {
   const el = document.querySelectorAll(".product-data");
   const products = Array.from(el).map((product) => product.dataset);

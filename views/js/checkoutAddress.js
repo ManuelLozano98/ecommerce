@@ -1,5 +1,3 @@
-const BASE_URL = "/Ecommerce";
-
 $(document).ready(function () {
   getById("form").addEventListener("submit", function (e) {
     e.preventDefault();

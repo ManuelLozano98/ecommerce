@@ -1,4 +1,3 @@
-const BASE_URL = "/Ecommerce";
 initialize();
 
 async function initialize() {
