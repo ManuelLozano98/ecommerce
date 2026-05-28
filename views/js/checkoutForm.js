@@ -11,7 +11,7 @@ async function initialize() {
   const client = urlParams.get("client");
   if (!client || client === "undefined") {
     // notifyErrorResponse();
-    location.href = "/Ecommerce";
+    location.href = BASE_URL;
   }
 
   const checkout = await stripe.initEmbeddedCheckout({

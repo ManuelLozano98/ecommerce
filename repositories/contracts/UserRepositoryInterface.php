@@ -41,5 +41,13 @@ interface UserRepositoryInterface
 
     public function update(User $user): User;
 
+    public function updatePassword(int $userId, string $password): User;
+
+    public function updateEmail(User $user, string $email): User;
+
+    public function updateProfile(User $user, array $data): User;
+
+    public function updateToken(User $user, string $token, string $expires_at): User;
+
     public function delete(int $id): bool;
 }

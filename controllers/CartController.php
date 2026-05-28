@@ -47,7 +47,7 @@ class CartController
                 throw new \Exception('Invalid product');
             }
 
-            $product->setCategory($this->categoryService->getCategory($product->getId()));
+            $product->setCategory($this->categoryService->getCategory($product->getCategoryId()));
             if (!isset($_SESSION['cart'][$productId])) {
                 $_SESSION['cart'][$productId] = $cartItem;
             } else {
@@ -95,6 +95,39 @@ class CartController
                 ->withHeader('Content-Type', 'application/json')
                 ->withStatus(400);
         }
+    }
+
+    public function delete(Request $request, Response $response, array $args): Response
+    {
+        $id = $args['id'];
+        $result = [
+            'success' => false,
+            'message' => 'An error occurred while trying to remove the product'
+        ];
+
+        if (isset($_SESSION['user'])) {
+            $userId = $_SESSION['user']['data']->getId();
+            if ($this->cartService->deleteByUserAndProduct($userId, $id)) {
+                $result = [
+                    'success' => true,
+                    'message' => 'The product was removed'
+                ];
+            }
+        } else {
+            if (isset($_SESSION['cart'][$id])) {
+                unset($_SESSION['cart'][$id]);
+            }
+
+            if (!isset($_SESSION['cart'][$id])) {
+                $result = [
+                    'success' => true,
+                    'message' => 'The product was removed'
+                ];
+            }
+        }
+        $response->getBody()->write(json_encode($result));
+
+        return $response;
     }
 
 

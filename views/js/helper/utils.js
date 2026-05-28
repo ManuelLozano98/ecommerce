@@ -1,3 +1,5 @@
+const BASE_URL = "/Ecommerce";
+
 const API_MSGS = {
   General: "Action completed successfully",
   Created: "New entry created successfully",
@@ -223,4 +225,23 @@ function getFullTextForExport(node) {
   return $fullData ? decodeURIComponent($fullData) : $(node).text();
 }
 
+function loadMenuPosition() {
+  const menu = document.getElementsByClassName("sidebar")[0];
+
+  if (!menu) {
+    return;
+  }
+
+  const savedScroll = localStorage.getItem("menuScroll");
+
+  if (savedScroll) {
+    menu.scrollTop = savedScroll;
+  }
+
+  menu.addEventListener("scroll", () => {
+    localStorage.setItem("menuScroll", menu.scrollTop);
+  });
+}
+
 closeModalDialog();
+loadMenuPosition();

@@ -26,7 +26,8 @@ require_once __DIR__ . "/layout/header.php";
                         </div>
                         <div class="col-sm-6">
                             <ol class="breadcrumb float-sm-right">
-                                <li class="breadcrumb-item"><a href="home">Home</a></li>
+                                <li class="breadcrumb-item"><a href="<?php echo ROOT?>">Home</a></li>
+                                <li class="breadcrumb-item"><a href="<?php echo ROOT ."/admin"?>">Admin</a></li>
                                 <li class="breadcrumb-item active">Categories</li>
                             </ol>
                         </div>
@@ -57,7 +58,7 @@ require_once __DIR__ . "/layout/header.php";
                                     </div>
                                     <div class="col-sm-12">
                                         <label for="description" class="form-label fw-semibold">Description</label>
-                                        <textarea id="description" class="form-control" rows="4" maxlength="255" placeholder="Write here..."></textarea>
+                                        <textarea id="description" class="form-control" rows="4" maxlength="255" placeholder="Write here..." name="description"></textarea>
                                         <div class="text-end text-muted mt-1">
                                             <span id="counter">0/255</span>
                                         </div>

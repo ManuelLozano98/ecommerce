@@ -73,10 +73,10 @@
                                             Category
                                         </button>
 
-                                        <ul class="dropdown-menu p-3 shadow-sm" style="min-width: 220px; max-height: 300px; overflow-y: auto;">
-                                            <li class="mb-2">
-                                                <input type="text" class="form-control form-control-sm" placeholder="Buscar...">
-                                            </li>
+                                        <ul id="menuCategories" class="dropdown-menu p-3 shadow-sm" style="min-width: 220px; max-height: 300px; overflow-y: auto;">
+                                            <div class="mb-2">
+                                                <input type="search" id="search-category" class="form-control form-control-sm" placeholder="Search...">
+                                            </div>
                                             <?php for ($i = 0; $i < count($categories); $i++): ?>
                                                 <li>
                                                     <div class="form-check">
@@ -162,6 +162,7 @@
                     <div class="container-fluid">
                         <div class="row" id="content-products">
                             <?php foreach ($products as $product): ?>
+                                <?php $real_price = $product->real_price; $product = $product->product;?>
                                 <div class="col-6 col-md-4 col-lg-3 col-xl-2 mb-4">
                                     <div class="card h-100 shadow-sm border-0">
                                         <!-- IMAGE -->
@@ -178,9 +179,18 @@
                                         <div class="card-body d-flex flex-column">
 
                                             <!-- PRICE -->
-                                            <h5 class="fw-bold mb-1">
-                                                <?php echo $product->getPrice() ?>€
-                                            </h5>
+                                            <?php if ($real_price != $product->getPrice()): ?>
+                                                <h5 class="text-danger">
+                                                    <del><?php echo $product->getPrice() ?>€</del>
+                                                </h5>
+                                                <h5 class="fw-bold mb-1 d-inline">
+                                                    <?php echo $real_price ?>€
+                                                </h5>
+                                            <?php else: ?>
+                                                <h5 class="fw-bold mb-1">
+                                                    <?php echo $product->getPrice() ?>€
+                                                </h5>
+                                            <?php endif; ?>
 
                                             <!-- RATING -->
                                             <div class="text-warning mb-1">

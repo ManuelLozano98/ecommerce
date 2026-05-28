@@ -15,10 +15,10 @@ $user = $_SESSION["user"]["data"] ?? NULL;
         <div class="user-panel mt-3 pb-3 mb-3 d-flex">
 
             <div class="image">
-                <?php if ($user): ?>
-                    <img src="<?php echo  UPLOADS_USERS_IMAGES ?>/<?php echo $user->getImage() ?>" class="img-circle elevation-2" alt="User Image">
+                <?php if ($user?->getImage()): ?>
+                    <img src="<?php echo UPLOADS_IMAGES . "/" . $user->getImage() ?>" class="img-circle elevation-2" alt="User Image">
                 <?php else: ?>
-                    <img src="<?php echo  ADMINLTE ?>dist/img/avatar5.png" class="img-circle elevation-2" alt="No image">
+                    <img src="<?php echo ROOT . "/views/images/default-user.jpg" ?>" class="img-circle elevation-2" alt="No image">
                 <?php endif; ?>
             </div>
 

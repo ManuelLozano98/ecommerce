@@ -10,6 +10,7 @@ use App\Services\ReviewService;
 use App\Services\ProductService;
 use App\Services\ProductImageService;
 use App\Services\ProductInformationService;
+use App\Services\ShippingAddressService;
 use App\Services\UserService;
 
 class Controller
@@ -21,6 +22,7 @@ class Controller
     private ProductImageService $productImageService;
     private UserService $userService;
     private ProductInformationService $productInformationService;
+    private ShippingAddressService $shippingAddressService;
 
 
     public function __construct(
@@ -30,7 +32,8 @@ class Controller
         ReviewService $reviewService,
         UserService $userService,
         ProductImageService $productImageService,
-        ProductInformationService $productInformationService
+        ProductInformationService $productInformationService,
+        ShippingAddressService $shippingAddressService
     ) {
         $this->renderer = $renderer;
         $this->categoryService = $categoryService;
@@ -39,6 +42,7 @@ class Controller
         $this->userService = $userService;
         $this->productImageService = $productImageService;
         $this->productInformationService = $productInformationService;
+        $this->shippingAddressService = $shippingAddressService;
     }
     public function index($request, $response, $args)
     {
@@ -73,18 +77,12 @@ class Controller
         $isAjax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === "xmlhttprequest";
 
         if ($isAjax) {
-            $productsWithDiscount = $this->productInformationService->getWithDiscount();
             $products = $this->productService->getProductsRawFiltered($filters, $itemsPerPage, $offset);
             $total = $this->productService->countFiltered($filters);
 
             $productData = [];
 
             foreach ($products as $row) {
-                foreach ($productsWithDiscount as $productDiscount) {
-                    if ($productDiscount->getProductId() === $row['id']) {
-                        $row['price'] = round($row['price'] * (1 - $productDiscount->getDiscount() / 100), 2);
-                    }
-                }
                 $category = $this->categoryService->getCategory($row['category_id']);
 
                 $ratingStats = $this->reviewService->getProductRatingStats($row['id']);
@@ -95,9 +93,10 @@ class Controller
                     "name" => $row['name'],
                     "description" => $row['description'],
                     "price" => $row['price'],
+                    "final_price" => $row['final_price'],
                     "image" => $row['image'],
                     "slug" => $row['slug'],
-                    "category" => $category->getName(),
+                    "category" => $category->getSlug(),
                     "average" => $row['avg_rating'] ?? 0,
                     "total_sales" => $row['total_sales'] ?? 0
                 ];
@@ -115,17 +114,12 @@ class Controller
             return $response->withHeader('Content-Type', 'application/json');
         }
 
-        $productsWithDiscount = $this->productInformationService->getWithDiscount();
         $products = $this->productService->getProductsFiltered($filters, $itemsPerPage, $offset);
         $total = $this->productService->countFiltered($filters);
         $totalPages = ceil($total / $itemsPerPage);
 
         foreach ($products as $product) {
-            foreach ($productsWithDiscount as $productDiscount) {
-                if ($productDiscount->getProductId() === $product->getId()) {
-                    $product->setPrice(round($product->getPrice() * (1 - $productDiscount->getDiscount() / 100), 2));
-                }
-            }
+            $product = $product->product;
             $ratingStats = $this->reviewService->getProductRatingStats($product->getId());
             $reviewPerProduct[$product->getId()] = $ratingStats;
             $product->setCategory($this->categoryService->getCategoryByProduct($product));
@@ -182,18 +176,12 @@ class Controller
         $isAjax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === "xmlhttprequest";
 
         if ($isAjax) {
-            $productsWithDiscount = $this->productInformationService->getWithDiscount();
             $products =  $this->productService->getProductsRawFiltered($filters, $itemsPerPage, $offset);
             $total =  $this->productService->countFiltered($filters);
 
             $productData = [];
 
             foreach ($products as $row) {
-                foreach ($productsWithDiscount as $productDiscount) {
-                    if ($productDiscount->getProductId() === $row['id']) {
-                        $row['price'] = round($row['price'] * (1 - $productDiscount->getDiscount() / 100), 2);
-                    }
-                }
 
                 $productCategory =  $this->categoryService->getCategory($row['category_id']);
 
@@ -205,9 +193,10 @@ class Controller
                     "name" => $row['name'],
                     "description" => $row['description'],
                     "price" => $row['price'],
+                    "final_price" => $row['final_price'],
                     "image" => $row['image'],
                     "slug" => $row['slug'],
-                    "category" => $productCategory->getName(),
+                    "category" => $productCategory->getSlug(),
                     "average" => $row['avg_rating'] ?? 0,
                     "total_sales" => $row['total_sales'] ?? 0
                 ];
@@ -224,17 +213,12 @@ class Controller
 
             return $response->withHeader('Content-Type', 'application/json');
         }
-        $productsWithDiscount = $this->productInformationService->getWithDiscount();
         $products =  $this->productService->getProductsFiltered($filters, $itemsPerPage, $offset);
         $total =  $this->productService->countFiltered($filters);
         $totalPages = ceil($total / $itemsPerPage);
 
         foreach ($products as $product) {
-            foreach ($productsWithDiscount as $productDiscount) {
-                if ($productDiscount->getProductId() === $product->getId()) {
-                    $product->setPrice(round($product->getPrice() * (1 - $productDiscount->getDiscount() / 100), 2));
-                }
-            }
+            $product = $product->product;
             $ratingStats =  $this->reviewService->getProductRatingStats($product->getId());
             $reviewPerProduct[$product->getId()] = $ratingStats;
             $product->setCategory($this->categoryService->getCategoryByProduct($product));
@@ -281,7 +265,7 @@ class Controller
             return strcmp(strtolower($a->getName()), strtolower($b->getName()));
         });
         $productInfo = $this->productInformationService->getByProductId($product->getId());
-        $reviews = $this->reviewService->getReviewsByProduct($product->getId());
+        $reviews = $this->reviewService->getRecentReviewsByProduct($product->getId());
         $ratingStats = $this->reviewService->getProductRatingStats($product->getId());
         foreach ($reviews as $review) {
             $user = $this->userService->getUser($review->getUserId());
@@ -322,5 +306,114 @@ class Controller
     public function indexCheckoutReturn($request, $response, $args)
     {
         return $this->renderer->render($response, "checkout-return.php");
+    }
+
+    public function checkoutAddress($request, $response, $args)
+    {
+        $body = $request->getBody()->getContents();
+        $data = json_decode($body, true);
+        if (!$data) {
+            $response->getBody()->write(json_encode([
+                'success' => false,
+                'message' => 'No data',
+            ]));
+            return $response;
+        }
+        if (count($errors = $this->validateAddress($data)) > 0) {
+            $response->getBody()->write(json_encode([
+                'success' => false,
+                'message' => 'Invalid form',
+                'details' => ['field' => $errors]
+            ]));
+            return $response;
+        }
+        $data['user_id'] = $_SESSION['user']['data']->getId();
+        if (!$this->shippingAddressService->getByUser($data['user_id'])) {
+            $result = $this->shippingAddressService->save($data);
+        } else {
+            $result = $this->shippingAddressService->update($data);
+        }
+        if ($result) {
+            $response->getBody()->write(json_encode([
+                'success' => true,
+            ]));
+        } else {
+            $response->getBody()->write(json_encode([
+                'success' => false,
+                'message' => $result
+            ]));
+        }
+
+        return $response;
+    }
+
+    private function validateAddress($data)
+    {
+        $errors = [];
+        if (!isset($data['full_name']) || trim($data['full_name']) === '') {
+            $errors['full_name'] = 'Full name is required.';
+        }
+
+        if (!isset($data['phone']) || !preg_match('/^[0-9+\s()-]{7,20}$/', $data['phone'])) {
+            $errors['phone'] = 'Invalid telephone number.';
+        }
+
+        if (!isset($data['address']) || trim($data['address']) === '') {
+            $errors['address'] = 'Address is required.';
+        }
+
+        if (!isset($data['city']) || trim($data['city']) === '') {
+            $errors['city'] = 'City is required.';
+        }
+
+        if (!isset($data['province']) || trim($data['province']) === '') {
+            $errors['province'] = 'Province is required.';
+        }
+
+        if (!isset($data['postal_code']) || !preg_match('/^[0-9]{5}$/', $data['postal_code'])) {
+            $errors['postal_code'] = 'Invalid postal code.';
+        }
+        return $errors;
+    }
+
+    public function checkoutStart($request, $response, $args)
+    {
+        $body = $request->getBody()->getContents();
+        $data = json_decode($body, true);
+        if (!$data) {
+            $response->getBody()->write(json_encode([
+                'success' => false,
+                'message' => 'No data',
+            ]));
+            return $response;
+        }
+        $_SESSION["checkout"] = $data;
+        if (!isset($_SESSION["user"])) {
+            $link = ROOT . "/checkout/address";
+            $_SESSION["redirect_after_login"] = $link;
+
+            $response->getBody()->write(json_encode([
+                'success' => false,
+                'redirect' => ROOT . "/login",
+            ]));
+            return $response;
+        }
+
+
+
+        $response->getBody()->write(json_encode([
+            'success' => true,
+            'redirect' => ROOT . "/checkout/address",
+        ]));
+        return $response;
+    }
+
+    public function indexCheckoutAddress($request, $response, $args)
+    {
+        $products = $_SESSION["checkout"];
+        $userId = $_SESSION['user']['data']->getId();
+        $data = $this->shippingAddressService->getByUser($userId);
+        $userData = $this->userService->getUser($userId);
+        return $this->renderer->render($response, "checkout-address.php", ['address' => $data, 'userData' => $userData, 'products' => $products]);
     }
 }

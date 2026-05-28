@@ -7,6 +7,7 @@
   <meta name="description" content="A demo of a payment on Stripe" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="https://js.stripe.com/v3/"></script>
+  <script src="<?php echo ROOT . "/" ?>views/js/helper/utils.js" defer></script>
   <script src="<?php echo ROOT . "/" ?>views/js/checkoutForm.js" defer></script>
 </head>
 

@@ -47,6 +47,16 @@ class UserService
         return $this->repository->countUsersRegisteredLast7Days();
     }
 
+    public function getUserByEmail($email)
+    {
+        return $this->repository->findByEmail($email);
+    }
+
+    public function getUserByToken($token)
+    {
+        return $this->repository->findByToken($token);
+    }
+
 
     public function logIn($loginData)
     {
@@ -104,7 +114,7 @@ class UserService
             throw new NotFoundException("The user was not found or not exists");
         }
         $date = (new DateTime('now'))->format('Y-m-d H:i:s');
-        if ($user->getActive() === 0 && $user->getTokenExpiredAt() > $date) {
+        if (($user->getActive() === false || $user->getActive() === 0) && $user->getTokenExpiredAt() > $date) {
             if (!$this->repository->activateAccount($user)) {
                 throw new UpdateException("Failed to activate user with ID " . $user->getId());
             }
@@ -135,7 +145,7 @@ class UserService
         }
 
         $user = new User($rawUser);
-        $hash = password_hash($user->getPassword(), PASSWORD_BCRYPT);
+        $hash = password_hash($user->getPassword(), PASSWORD_ARGON2ID);
         $user->setPassword($hash);
         $user = $this->generateToken($user);
 
@@ -163,6 +173,62 @@ class UserService
 
         if (!$this->repository->update($user)) {
             throw new UpdateException("Failed to update user with ID " . $userDb->getId());
+        }
+        return $user;
+    }
+
+    public function updateEmail(User $user, string $email)
+    {
+        if (!$user || !$this->repository->findById($user->getId())) {
+            throw new NotFoundException("The user was not found or not exists");
+        }
+
+        if (!$this->repository->updateEmail($user, $email)) {
+            throw new UpdateException("Failed to update user with ID " . $user->getId());
+        }
+        return $user;
+    }
+
+    public function updatePassword(int $userId, string $password)
+    {
+        $passwordHash = password_hash($password, PASSWORD_ARGON2ID);
+        if (!$this->repository->updatePassword($userId, $passwordHash)) {
+            throw new UpdateException("Failed to update user with ID " . $userId);
+        };
+        return true;
+    }
+
+    public function updateProfile(User $user, array $data)
+    {
+        if (!$user || !$this->repository->findById($user->getId())) {
+            throw new NotFoundException("The user was not found or not exists");
+        }
+        if (!isset($data['name']) || $data['name'] === '') {
+            $data['name'] = $user->getName();
+        }
+        if (!isset($data['phone']) || $data['phone'] === '') {
+            $data['phone'] = $user->getPhone();
+        }
+        if (!isset($data['address']) || $data['address'] === '') {
+            $data['address'] = $user->getAddress();
+        }
+
+        if (!$this->repository->updateProfile($user, $data)) {
+            throw new UpdateException("Failed to update user with ID " . $user->getId());
+        }
+        return $user;
+    }
+
+    public function updateToken(User $user)
+    {
+        if (!$user || !$this->repository->findById($user->getId())) {
+            throw new NotFoundException("The user was not found or not exists");
+        }
+        $token = bin2hex(random_bytes(32));
+        $expiresAt = date('Y-m-d H:i:s', strtotime('+1 day'));
+
+        if (!$this->repository->updateToken($user, $token, $expiresAt)) {
+            throw new UpdateException("Failed to update user with ID " . $user->getId());
         }
         return $user;
     }

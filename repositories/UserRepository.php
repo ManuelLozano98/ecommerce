@@ -250,6 +250,52 @@ SELECT u_r.user_id FROM users_roles u_r WHERE u_r.role_id = ?)", "i", $role->get
 
         return $user;
     }
+
+    public function updatePassword(int $userId, string $passwordHash): User
+    {
+        DatabaseHelper::preparedQuery(
+            "UPDATE users SET password=? WHERE id=?",
+            "si",
+            $passwordHash,
+            $userId
+        );
+        return $this->findById($userId);
+    }
+
+    public function updateEmail(User $user, string $email): User
+    {
+        DatabaseHelper::preparedQuery(
+            "UPDATE users SET email=? WHERE id=?",
+            "si",
+            $email,
+            $user->getId()
+        );
+        return $user;
+    }
+
+    public function updateProfile(User $user, array $data): User
+    {
+        DatabaseHelper::preparedQuery(
+            "UPDATE users SET name=?, address=?, phone=? WHERE id=?",
+            "sssi",
+            $data['name'],
+            $data['address'],
+            $data['phone'],
+            $user->getId()
+        );
+        return $user;
+    }
+    public function updateToken(User $user, string $token, string $expires_at): User
+    {
+        DatabaseHelper::preparedQuery(
+            "UPDATE users SET verification_token=?, token_expires_at=? WHERE id=?",
+            "ssi",
+            $token,
+            $expires_at,
+            $user->getId()
+        );
+        return $user;
+    }
     public function delete(int $id): bool
     {
         return DatabaseHelper::preparedQuery("DELETE FROM users WHERE id = ?", "i", $id);

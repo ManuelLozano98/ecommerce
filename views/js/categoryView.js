@@ -72,7 +72,7 @@ $(document).ready(() => {
     const slider = $("#slider").data("ionRangeSlider");
     if (slider) {
       const defaultFrom = 0;
-      const defaultTo = parseInt(
+      const defaultTo = parseFloat(
         $("#slider").data("ionRangeSlider").options.max,
       );
       if (slider.result.from == defaultFrom && slider.result.to == defaultTo) {
@@ -150,7 +150,7 @@ $(document).ready(() => {
       }
 
       const imageHTML = product.image
-        ? `<img src="/Ecommerce/uploads/images/${product.image}"
+        ? `<img src="${BASE_URL}/uploads/images/${product.image}"
               alt="${product.name}"
               class="card-img-top object-fit-cover">`
         : "";
@@ -158,16 +158,22 @@ $(document).ready(() => {
       html = `
       <div class="col-6 col-md-4 col-lg-3 col-xl-2 mb-4">
           <div class="card h-100 shadow-sm border-0">                          
-            <a href="/Ecommerce/${product.category.toLowerCase()}/${product.slug}">
+            <a href="${BASE_URL}/${product.category.toLowerCase()}/${product.slug}">
               <div class="ratio ratio-1x1 bg-light">
                   ${imageHTML}
               </div>
             </a>
-            <div class="card-body d-flex flex-column">
-               <h5 class="fw-bold mb-1">
-                  ${product.price}€
-                </h5>
-                <div class="text-warning mb-1">
+            <div class="card-body d-flex flex-column">`;
+      if (product.final_price != product.price) {
+        html += `
+             <h5 class="text-danger">
+                 <del>${product.price}€</del>
+              </h5>
+              <h5 class="fw-bold mb-1 d-inline">${product.final_price}€</h5>`;
+      } else {
+        html += `<h5 class="fw-bold mb-1">${product.price}€</h5>`;
+      }
+      html += `<div class="text-warning mb-1">
                   <span class="stars">
                     ${starsHTML}
                    </span>                           
@@ -178,7 +184,7 @@ $(document).ready(() => {
                <p class="card-text text-muted flex-grow-1">
                   ${product.name}
                 </p>
-                <a href="/Ecommerce/${product.category.toLowerCase()}/${product.slug}" class="btn btn-dark w-100 btn-sm rounded-pill">
+                <a href="${BASE_URL}/${product.category.toLowerCase()}/${product.slug}" class="btn btn-dark w-100 btn-sm rounded-pill">
                   View product
                 </a>
               </div>
@@ -364,7 +370,7 @@ function setupIonSlider() {
     .then((res) => res.json())
     .then((data) => {
       $slider.update({
-        max: parseFloat(data.data[0].price),
+        max: parseFloat(data.data[0].real_price),
       });
     })
     .catch((err) => console.error(err));

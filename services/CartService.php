@@ -37,7 +37,7 @@ class CartService
         foreach ($cart as $items) {
             $items->setProduct($this->product_repository->findById($items->getProduct()->getId()));
             $items->getProduct()->setCategory($this->category_repository->findById($items->getProduct()->getCategoryId()));
-            $discount = $this->product_information_repository->findByProductId($items->getProduct()->getId())->getDiscount() ?? 0;
+            $discount = $this->product_information_repository->findByProductId($items->getProduct()->getId())?->getDiscount() ?? 0;
             $items->getProduct()->setPrice(round($items->getProduct()->getPrice() * (1 - $discount / 100), 2));
         }
         return $cart;
@@ -51,7 +51,7 @@ class CartService
         }
         $cart->setProduct($this->product_repository->findById($cart->getProduct()->getId()));
         $cart->getProduct()->setCategory($this->category_repository->findById($cart->getProduct()->getCategoryId()));
-        $discount = $this->product_information_repository->findByProductId($cart->getProduct()->getId())->getDiscount() ?? 0;
+        $discount = $this->product_information_repository->findByProductId($cart->getProduct()->getId())?->getDiscount() ?? 0;
         $cart->getProduct()->setPrice(round($cart->getProduct()->getPrice() * (1 - $discount / 100), 2));
         return $cart;
     }
@@ -62,7 +62,7 @@ class CartService
         foreach ($cart as $items) {
             $items->setProduct($this->product_repository->findById($items->getProduct()->getId()));
             $items->getProduct()->setCategory($this->category_repository->findById($items->getProduct()->getCategoryId()));
-            $discount = $this->product_information_repository->findByProductId($items->getProduct()->getId())->getDiscount() ?? 0;
+            $discount = $this->product_information_repository->findByProductId($items->getProduct()->getId())?->getDiscount() ?? 0;
             $items->getProduct()->setPrice(round($items->getProduct()->getPrice() * (1 - $discount / 100), 2));
         }
         return $cart;
@@ -98,6 +98,14 @@ class CartService
         }
     }
 
+    public function deleteByUserAndProduct($userId, $id)
+    {
+        $result = $this->repository->deleteByUserAndProduct($userId, $id);
+        if (!$result) {
+            throw new DeleteException("Failed to delete cart with ID $id.");
+        }
+        return $result;
+    }
     public function save($cart)
     {
         if (!$this->user_repository->findById($cart->getUserId())) {
@@ -118,10 +126,10 @@ class CartService
 
         $this->set($cartDb, $cart);
 
-        if (!$this->repository->update($cartDb)) {
+        if (!$updated = $this->repository->update($cartDb)) {
             throw new UpdateException("Failed to update cart with ID " . $cartDb->getId());
         }
-        return $cartDb;
+        return $updated;
     }
 
     private function set($cartDb, $cart)
@@ -129,11 +137,11 @@ class CartService
         $allowedFields = ['user_id', 'product_id', 'quantity'];
 
         foreach ($allowedFields as $field) {
-            if (isset($cart->$field)) {
-                $method = 'set' . str_replace(' ', '', ucwords(str_replace('_', ' ', $field)));
-
-                if (method_exists($cartDb, $method)) {
-                    $cartDb->$method($cart->$field);
+            $method = 'set' . str_replace(' ', '', ucwords(str_replace('_', ' ', $field)));
+            $getMethod = 'get' . str_replace(' ', '', ucwords(str_replace('_', ' ', $field)));
+            if (method_exists($cartDb, $method)) {
+                if (method_exists($cartDb, $getMethod)) {
+                    $cartDb->$method($cart->$getMethod());
                 }
             }
         }

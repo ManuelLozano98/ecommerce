@@ -144,6 +144,8 @@
                     <div class="container-fluid">
                         <div class="row" id="content-products" data-category="<?php echo $category->getId() ?>">
                             <?php foreach ($products as $product): ?>
+                                <?php $real_price = $product->real_price;
+                                $product = $product->product; ?>
                                 <div class="col-6 col-md-4 col-lg-3 col-xl-2 mb-4">
                                     <div class="card h-100 shadow-sm border-0">
                                         <a href="<?php echo ROOT . "/" . $product->getCategory()->getSlug() . "/" . $product->getSlug() ?>">
@@ -156,9 +158,18 @@
                                         </a>
                                         <div class="card-body d-flex flex-column">
                                             <!-- PRICE -->
-                                            <h5 class="fw-bold mb-1">
-                                                <?php echo $product->getPrice() ?>€
-                                            </h5>
+                                            <?php if ($real_price != $product->getPrice()): ?>
+                                                <h5 class="text-danger">
+                                                    <del><?php echo $product->getPrice() ?>€</del>
+                                                </h5>
+                                                <h5 class="fw-bold mb-1 d-inline">
+                                                    <?php echo $real_price ?>€
+                                                </h5>
+                                            <?php else: ?>
+                                                <h5 class="fw-bold mb-1">
+                                                    <?php echo $product->getPrice() ?>€
+                                                </h5>
+                                            <?php endif; ?>
 
                                             <!-- RATING -->
                                             <div class="text-warning mb-1">

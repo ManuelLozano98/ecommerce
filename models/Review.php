@@ -13,7 +13,7 @@ class Review implements JsonSerializable
     private string $comment;
     private float $rating;
     private string $created_at;
-    private string $updated_at;
+    private ?string $updated_at;
     private bool $active;
 
 
@@ -26,7 +26,7 @@ class Review implements JsonSerializable
         $this->comment = $data['comment'] ?? '';
         $this->rating = $data['rating'] ?? 0.0;
         $this->created_at = $data['created_at'] ?? date('Y-m-d H:i:s');
-        $this->updated_at = $data['updated_at'] ?? date('Y-m-d H:i:s');
+        $this->updated_at = $data['updated_at'] ?? null;
         $this->active = (bool) ($data['active'] ?? true);
     }
 
