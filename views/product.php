@@ -483,7 +483,7 @@
                                 </div>
                             <?php endif; ?>
                             <!-- DESCRIPTION AND REVIEWS-->
-                            <div class="row mt-4">
+                            <div class="mt-4">
                                 <nav class="w-100">
                                     <div class="nav nav-tabs" id="product-tab" role="tablist">
                                         <a class="nav-item nav-link" id="product-desc-tab" data-toggle="tab" href="#product-desc" role="tab" aria-controls="product-desc" aria-selected="true">Description</a>
@@ -494,38 +494,46 @@
                                     <div class="tab-pane fade" id="product-desc" role="tabpanel" aria-labelledby="product-desc-tab"> <?php echo $product->getDescription() ?></div>
                                     <div class="tab-pane fade show active" id="product-comments" role="tabpanel" aria-labelledby="product-comments-tab">
                                         <button class="btn btn-outline-dark" id="customer-review">Write a customer review</button>
-                                        <div class="card shadow p-4 d-none" id="review-card">
-                                            <form method="POST" id="review-form">
-                                                <div class="mb-3">
-                                                    <label class="form-label">Title</label>
-                                                    <input id="title-review" type="text" class="form-control" placeholder="Write a title">
+                                        <div class="row justify-content-center">
+                                            <div class="col-12">
+                                                <div class="card shadow p-4 d-none mt-5" id="review-card">
+                                                    <form method="POST" id="review-form">
+                                                        <div class="mb-3">
+                                                            <label class="form-label">Title</label>
+                                                            <input id="title-review" type="text" class="form-control" placeholder="Write a title">
+                                                        </div>
+
+                                                        <!-- Text -->
+                                                        <div class="mb-3">
+                                                            <label class="form-label">Comment</label>
+                                                            <textarea id="comment-review" class="form-control" rows="4" placeholder="Write your opinion"></textarea>
+                                                        </div>
+
+                                                        <!-- Rating -->
+                                                        <div class="mb-3">
+                                                            <label class="form-label d-block">Rating</label>
+                                                            <div class="star-rating">
+                                                                <input id="rating-review" type="range" min="0.5" max="5" step="0.5" value="2.5"
+                                                                    class="rating" style="--val:2.5"
+                                                                    oninput="this.style='--val:'+this.value" name="rating">
+
+                                                            </div>
+                                                            <input type="hidden" id="rating" name="rating" value="0">
+                                                        </div>
+
+                                                        <button id="post-review" data-review="<?php echo $userId ?>" type="submit" class="btn btn-primary">Post review</button>
+                                                    </form>
                                                 </div>
-
-                                                <!-- Text -->
-                                                <div class="mb-3">
-                                                    <label class="form-label">Comment</label>
-                                                    <textarea id="comment-review" class="form-control" rows="4" placeholder="Write your opinion"></textarea>
-                                                </div>
-
-                                                <!-- Rating -->
-                                                <div class="mb-3">
-                                                    <label class="form-label d-block">Rating</label>
-                                                    <div class="star-rating">
-                                                        <input id="rating-review" type="range" min="0.5" max="5" step="0.5" value="2.5"
-                                                            class="rating" style="--val:2.5"
-                                                            oninput="this.style='--val:'+this.value" name="rating">
-
-                                                    </div>
-                                                    <input type="hidden" id="rating" name="rating" value="0">
-                                                </div>
-
-                                                <button id="post-review" data-review="<?php echo $userId ?>" type="submit" class="btn btn-primary">Post review</button>
-                                            </form>
+                                            </div>
                                         </div>
                                         <?php foreach ($data['reviews'] as $review): ?>
                                             <div class="d-flex mt-3 pb-3 border-bottom">
                                                 <div class="flex-shrink-0 mr-2">
-                                                    <img src="<?php echo UPLOADS_IMAGES . "/" . $review['user']->getImage() ?>" class="img-circle elevation-2" style="width:40px; height:40px; object-fit:cover;" alt="User Image">
+                                                    <?php if ($review['user']->getImage()): ?>
+                                                        <img src="<?php echo UPLOADS_IMAGES . "/" . $review['user']->getImage() ?>" class="img-circle elevation-2" style="width:40px; height:40px; object-fit:cover;" alt="User Image">
+                                                    <?php else: ?>
+                                                        <img src="<?php echo ROOT . "/views/images/default-user.jpg"  ?>" class="img-circle elevation-2" style="width:40px; height:40px; object-fit:cover;" alt="Default Image">
+                                                    <?php endif; ?>
                                                 </div>
                                                 <div class="info ms-3 flex-grow-1" style="min-width:0;">
                                                     <strong><?php echo $review['user']->getUsername(); ?></strong>

@@ -110,7 +110,7 @@ require_once __DIR__ . '/../config/constants.php';
                                             alt="User profile picture">
                                     <?php else : ?>
                                         <img class="profile-user-img img-fluid img-circle"
-                                            src="images/default-user.jpg"
+                                            src="<?php echo ROOT . "/views/images/default-user.jpg" ?>"
                                             alt="User profile picture">
                                     <?php endif; ?>
 
@@ -181,20 +181,50 @@ require_once __DIR__ . '/../config/constants.php';
                                         <?php endif; ?>
                                         <?php foreach ($reviews as $review): ?>
                                             <!-- Post -->
-                                            <div class="post">
-                                                <div class="review-block">
-                                                    <img style="width:200px" src="<?php echo UPLOADS_IMAGES . "/" . $review['image'] ?>" alt="product image">
-                                                    <span class="product-name">
-                                                        <a href="<?php echo $review['slug'] ?>"><?php echo $review['name'] ?></a>
-                                                    </span>
-                                                    <span class="description">Shared publicly - <?php echo timeAgo($review['created_at']) ?></span>
+                                            <div class="post border rounded p-3 mb-4 shadow-sm">
+
+                                                <div class="d-flex flex-column flex-md-row gap-3">
+
+                                                    <!-- Product image -->
+                                                    <div class="flex-shrink-0 text-center">
+                                                        <img
+                                                            src="<?php echo UPLOADS_IMAGES . "/" . $review['image'] ?>"
+                                                            alt="product image"
+                                                            class="img-fluid rounded"
+                                                            style="width: 180px; object-fit: cover;">
+                                                    </div>
+
+                                                    <!-- Content -->
+                                                    <div class="flex-grow-1 ml-5">
+
+                                                        <div class="d-flex justify-content-between align-items-start flex-wrap">
+                                                            <div>
+                                                                <h5 class="text-primary"><?php echo $review['name'] ?></h5>
+
+                                                                <small class="text-muted">
+                                                                    <span class="text-bold">Shared publicly</span> · <?php echo timeAgo($review['created_at']) ?>
+                                                                </small>
+                                                            </div>
+
+                                                            <div class="mt-2 mt-md-0">
+                                                                <?php renderStars($review['rating']); ?>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="mt-3">
+                                                            <h6 class="fw-bold mb-2">
+                                                                <?php echo $review['title'] ?>
+                                                            </h6>
+
+                                                            <p class="mb-0 text-break">
+                                                                <?php echo $review['comment'] ?>
+                                                            </p>
+                                                        </div>
+
+                                                    </div>
+
                                                 </div>
-                                                <!-- /.review-block -->
-                                                <?php renderStars($review['rating']); ?>
-                                                <p>
-                                                    <strong><?php echo $review['title'] ?></strong><br />
-                                                    <?php echo $review['comment'] ?>
-                                                </p>
+
                                             </div>
                                             <!-- /.post -->
                                         <?php endforeach; ?>
