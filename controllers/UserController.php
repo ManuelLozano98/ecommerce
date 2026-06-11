@@ -75,7 +75,7 @@ class UserController
         $buys = [];
         $reviewData = [];
         foreach ($orders as $order) {
-            if (strtolower($order->sales['status']) === "completed") {
+            if (strtolower($order->sales['status']->value) === "completed") {
                 foreach ($order->items as &$item) {
                     $product = $this->productService->getProduct($item->getProductId());
                     $itemArray = $item->toArray();
@@ -295,7 +295,7 @@ class UserController
     {
         $body = $request->getUploadedFiles();
 
-        if (!$body) {
+        if (empty($body)) {
             $response->getBody()->write(json_encode([
                 'success' => true,
                 'message' => 'No avatar uploaded'
