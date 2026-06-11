@@ -55,28 +55,36 @@ class SaleItemService
         }
 
         $saleItem = new SaleItem($rawSaleItem);
-        if (!$this->repository->insert($saleItem)) {
+        try {
+            return $this->repository->insert($saleItem);
+        } catch (\Throwable $e) {
             throw new InsertException("Failed to insert sale item");
         }
-        return $saleItem;
     }
 
     public function update($rawSaleItem)
     {
-        $saleItem = $this->getSale($rawSaleItem['sale_id']);
+        $existing = $this->repository->findById($rawSaleItem['id']);
 
-        if (!$this->repository->findById($rawSaleItem['id'])) {
+        if (!$existing) {
             throw new NotFoundException("The sale item was not found");
         }
+
+        if (!$this->saleRepository->findById($rawSaleItem["sale_id"])) {
+            throw new NotFoundException("The sale was not found");
+        }
+
         if (!$this->productRepository->findById($rawSaleItem["product_id"])) {
-            throw new NotFoundException("The sale item was not found");
+            throw new NotFoundException("The product was not found");
         }
-        $editSale = new SaleItem($rawSaleItem);
-        if (!$this->repository->update($editSale)) {
+
+        $editSaleItem = new SaleItem($rawSaleItem);
+
+        try {
+            return $this->repository->update($editSaleItem);
+        } catch (\Throwable $e) {
             throw new UpdateException("Failed to update sale item with ID " . $rawSaleItem['id']);
         }
-
-        return $saleItem;
     }
 
     public function deleteItemById($id, $saleId)
