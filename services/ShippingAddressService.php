@@ -26,7 +26,13 @@ class ShippingAddressService
 
     public function get($id)
     {
-        return $this->repository->findById($id);
+        $address = $this->repository->findById($id);
+
+        if (!$address) {
+            throw new NotFoundException("Address not found");
+        }
+
+        return $address;
     }
 
     public function getByUser($id)
@@ -36,19 +42,27 @@ class ShippingAddressService
 
     public function delete($id)
     {
-        $this->getByUser($id);
+        $address = $this->repository->findById($id);
+
+        if (!$address) {
+            throw new NotFoundException("Address not found");
+        }
 
         if (!$this->repository->delete($id)) {
-            throw new DeleteException("Failed to delete address with ID $id.");
+            throw new DeleteException("Failed to delete address with ID $id");
         }
     }
 
-    public function deleteByUser($id)
+    public function deleteByUser($userId)
     {
-        $this->getByUser($id);
+        $addresses = $this->repository->findByUserId($userId);
 
-        if (!$this->repository->deleteByUserId($id)) {
-            throw new DeleteException("Failed to delete address with ID $id.");
+        if (empty($addresses)) {
+            throw new NotFoundException("No addresses found for user");
+        }
+
+        if (!$this->repository->deleteByUserId($userId)) {
+            throw new DeleteException("Failed to delete addresses for user $userId");
         }
     }
 
@@ -57,25 +71,29 @@ class ShippingAddressService
         if ($this->repository->findByUserId($rawAddress["user_id"])) {
             throw new DuplicateException("The address already exists");
         }
-
         $address = new ShippingAddress($rawAddress);
 
-        if (!$this->repository->insert($address)) {
-            throw new InsertException("Failed to insert address with ID " . $address->getId());
-        } else {
-            return $address;
+        try {
+            return $this->repository->insert($address);
+        } catch (\Throwable $e) {
+            throw new InsertException("Failed to insert address");
         }
     }
     public function update($rawAddress)
     {
-        $addressDb = $this->getByUser($rawAddress["user_id"]);
+        $addressDb = $this->repository->findById($rawAddress["id"]);
+
+        if (!$addressDb) {
+            throw new NotFoundException("Address not found");
+        }
 
         $address = $this->set($addressDb, $rawAddress);
 
-        if (!$this->repository->update($address)) {
-            throw new UpdateException("Failed to update address with ID " . $addressDb->getId());
+        try {
+            return $this->repository->update($address);
+        } catch (\Throwable $e) {
+            throw new UpdateException("Failed to update address");
         }
-        return $address;
     }
 
 
