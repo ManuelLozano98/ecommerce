@@ -16,8 +16,7 @@ class TokenMiddleware
 
     public function __invoke($request, $handler)
     {
-        $routeContext = RouteContext::fromRequest($request);
-        $route = $routeContext->getRoute();
+        $route = $request->getAttribute(RouteContext::ROUTE);
         $args = $route->getArguments();
         $token = $args['token'];
         $password = $this->passwordService->getByToken($token);
