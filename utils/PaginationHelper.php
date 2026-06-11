@@ -26,7 +26,7 @@ class PaginationHelper
     }
 
 
-    public static function getPagination(int $start, int $length, string $search = '', string $orderBy = 'id', string $orderDir = 'DESC', string $tableName, array $columns)
+    public static function getPagination(int $start, int $length, string $tableName, array $columns, string $search = '', string $orderBy = 'id', string $orderDir = 'DESC')
     {
 
         $data = self::buildQuery($search, $columns);
@@ -126,7 +126,7 @@ class PaginationHelper
         $orderBy = $validColumns[$orderColumnIndex] ? $validColumns[$orderColumnIndex] : $validColumns[0]; // Sort by the selected column in the table or column 0 which in most cases is ID
         $orderDir = in_array(strtolower($orderDir), $validDirections) ? strtoupper($orderDir) : 'ASC';
 
-        return self::getPagination($start, $length, $search, $orderBy, $orderDir, $tableName, $validColumns);
+        return self::getPagination($start, $length, $tableName, $validColumns, $search, $orderBy, $orderDir);
     }
     public static function makeCustom(array $params, string $fromClause, array $validColumns, array $selectFields)
     {
