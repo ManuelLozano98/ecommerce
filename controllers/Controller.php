@@ -303,11 +303,6 @@ class Controller
         return $this->renderer->render($response, "checkout-form.php");
     }
 
-    public function indexCheckoutReturn($request, $response, $args)
-    {
-        return $this->renderer->render($response, "checkout-return.php");
-    }
-
     public function checkoutAddress($request, $response, $args)
     {
         $body = $request->getBody()->getContents();

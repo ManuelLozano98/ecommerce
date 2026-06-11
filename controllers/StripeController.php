@@ -21,8 +21,9 @@ class StripeController
     private CartService $cartService;
     private ProductService $productService;
     private MailService $mailService;
+    private PhpRenderer $renderer;
 
-    public function __construct(StripeService $stripeService, StripeClient $stripeClient, ProductService $productService, SaleService $saleService, SaleItemService $saleItemService, CartService $cartService, MailService $mailService)
+    public function __construct(StripeService $stripeService, StripeClient $stripeClient, ProductService $productService, SaleService $saleService, SaleItemService $saleItemService, CartService $cartService, MailService $mailService, PhpRenderer $renderer)
     {
         $this->stripeService = $stripeService;
         $this->stripeClient = $stripeClient;
@@ -32,6 +33,7 @@ class StripeController
         $this->cartService = $cartService;
         $this->productService = $productService;
         $this->mailService = $mailService;
+        $this->renderer = $renderer;
     }
     public function checkout($request, $response, $args)
     {
@@ -85,8 +87,7 @@ class StripeController
     public function checkCheckout($request, $response, $args)
     {
         try {
-            $jsonStr = file_get_contents('php://input');
-            $jsonObj = json_decode($jsonStr);
+            $jsonObj = json_decode($request->getBody()->getContents());
 
             $session = $this->stripeClient->checkout->sessions->retrieve($jsonObj->session_id);
 
@@ -173,11 +174,101 @@ class StripeController
 
 
                 break;
+            case 'checkout.session.expired':
+                $session = $event->data->object;
+
+                $paymentIntent = $this->stripeClient->paymentIntents->retrieve(
+                    $session->payment_intent,
+                    ['expand' => ['payment_method']]
+                );
+
+                $paymentMethod = $paymentIntent->payment_method;
+
+
+                // CREATE ORDER
+                $saleData = [
+                    'user_id' => $session->metadata->user_id,
+                    'total_amount' => $session->amount_total / 100,
+                    'status' => 'canceled',
+                    'payment_method' => $this->mapPayment($paymentMethod),
+                    'created_at' =>  date('Y-m-d H:i:s', $session->created),
+                ];
+                $products = [];
+                $sale = $this->saleService->save($saleData);
+                $items = $this->stripeClient->checkout->sessions->allLineItems($session->id, ['expand' => ['data.price.product']]);
+                foreach ($items->data as $item) {
+                    $itemData = [
+                        'sale_id' => $sale->getId(),
+                        'product_id' => (int)$item->price->product->metadata->product_id,
+                        'quantity' => $item->quantity,
+                        'price' => $item->price->unit_amount / 100,
+                        'subtotal' => $item->amount_subtotal / 100,
+                    ];
+                    $this->saleItemService->save($itemData);
+                }
+
+                break;
+
+            case 'payment_intent.payment_failed':
+                $paymentIntent = $event->data->object;
+                $paymentIntent = $this->stripeClient->paymentIntents->retrieve(
+                    $event->data->object->id,
+                    ['expand' => ['payment_method']]
+                );
+                $paymentMethod = $paymentIntent->payment_method;
+
+                $sessions = $this->stripeClient->checkout->sessions->all([
+                    'payment_intent' => $paymentIntent->id,
+                    'limit' => 1
+                ]);
+                $session = $sessions->data[0] ?? null;
+
+
+
+                // CREATE ORDER
+                $saleData = [
+                    'user_id' => $paymentIntent->metadata->user_id,
+                    'total_amount' => $paymentIntent->amount / 100,
+                    'status' => $this->mapStatus($paymentIntent->status),
+                    'payment_method' => $this->mapPayment($paymentMethod),
+                    'created_at' =>  date('Y-m-d H:i:s', $paymentIntent->created),
+                ];
+                $products = [];
+                $sale = $this->saleService->save($saleData);
+                $items = $this->stripeClient->checkout->sessions->allLineItems($session->id, ['expand' => ['data.price.product']]);
+                foreach ($items->data as $item) {
+                    $itemData = [
+                        'sale_id' => $sale->getId(),
+                        'product_id' => (int)$item->price->product->metadata->product_id,
+                        'quantity' => $item->quantity,
+                        'price' => $item->price->unit_amount / 100,
+                        'subtotal' => $item->amount_subtotal / 100,
+                    ];
+                    $this->saleItemService->save($itemData);
+                }
+                break;
         }
 
 
         $response->getBody()->write('OK');
         return $response->withStatus(200);
+    }
+
+    public function indexCheckoutReturn($request, $response, $args)
+    {
+        $params = $request->getQueryParams();
+        $sessionId = $params['session_id'] ?? null;
+
+        if (!$sessionId) {
+            return $response->withHeader('Location', ROOT)->withStatus(302);
+        }
+        try {
+            $session = $this->stripeClient->checkout->sessions->retrieve($sessionId);
+            $customer_email = $session->customer_details->email;
+            return $this->renderer->render($response, "checkout-return.php", ['session' => $session, 'customer_email' => $customer_email]);
+        } catch (\Stripe\Exception\InvalidRequestException) {
+            return $response->withHeader('Location', ROOT)->withStatus(302);
+        }
     }
 
     private function mapPayment($paymentMethod)
@@ -213,7 +304,7 @@ class StripeController
     {
         if ($status === "paid") {
             return "completed";
-        } else if ($status === "unpaid") {
+        } else if ($status === "unpaid" || $status  === "processing") {
             return "pending";
         }
         return "failed";
