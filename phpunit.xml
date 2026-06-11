@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit bootstrap="tests/bootstrap.php"
+         colors="true">
+    
+    <testsuites>
+        <testsuite name="Application Test Suite">
+            <directory>tests</directory>
+        </testsuite>
+    </testsuites>
+
+<coverage>
+    <include>
+        <directory>api</directory>
+        <directory>controllers</directory>
+        <directory>dtos</directory>
+        <directory>enums</directory>
+        <directory>exceptions</directory>
+        <directory>handlers</directory>
+        <directory>middleware</directory>
+        <directory>models</directory>
+        <directory>repositories</directory>
+        <directory>services</directory>
+        <directory>utils</directory>
+    </include>
+</coverage>
+
+</phpunit>
