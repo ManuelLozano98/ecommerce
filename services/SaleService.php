@@ -14,6 +14,8 @@ use App\Repositories\Contracts\ProductRepositoryInterface;
 use App\Repositories\Contracts\SaleItemRepositoryInterface;
 use App\Repositories\Contracts\SaleRepositoryInterface;
 use App\Repositories\Contracts\UserRepositoryInterface;
+use App\Enums\PaymentMethods;
+use App\Enums\SaleStatus;
 
 class SaleService
 {
@@ -111,24 +113,31 @@ class SaleService
 
     public function save($rawSale)
     {
-        if (!$this->userRepository->findById($rawSale["user_id"])) {
-            throw new NotFoundException("The sale was not found or not exists");
+        $user = $this->userRepository->findById($rawSale["user_id"]);
+
+        if (!$user) {
+            throw new NotFoundException("User not found");
         }
 
         $sale = new Sale($rawSale);
-        if (!$this->repository->insert($sale)) {
+
+        try {
+            return $this->repository->insert($sale);
+        } catch (\Throwable $e) {
             throw new InsertException("Failed to insert sale");
         }
-        return $sale;
     }
     public function update($rawSale)
     {
         $saleDb = $this->getSale($rawSale["id"]);
-        $editSale = new Sale($rawSale);
-        if (!$this->repository->update($editSale)) {
-            throw new UpdateException("Failed to update sale with ID " . $editSale->getId());
+
+        $this->set($saleDb, $rawSale);
+
+        try {
+            return $this->repository->update($saleDb);
+        } catch (\Throwable $e) {
+            throw new UpdateException("Failed to update sale");
         }
-        return $editSale;
     }
 
     public function deleteSale($id)
@@ -143,7 +152,13 @@ class SaleService
         foreach ($saleItems as $product) {
             $this->saleItemRepository->delete($product->getId());
         }
-        if (!$this->repository->delete($id)) {
+        try {
+            $deleted = $this->repository->delete($id);
+        } catch (\Throwable $e) {
+            throw new DeleteException("Failed to delete sale");
+        }
+
+        if (!$deleted) {
             throw new DeleteException("Failed to delete sale");
         }
     }
@@ -171,5 +186,44 @@ class SaleService
         if (!$deletedAll) {
             throw new DeleteException("Failed to delete sales");
         }
+    }
+    private function set(Sale $saleDb, array $rawSale): Sale
+    {
+        $allowedFields = [
+            'user_id',
+            'total_amount',
+            'payment_method',
+            'status',
+            'created_at',
+            'updated_at'
+        ];
+
+        foreach ($allowedFields as $field) {
+            if (isset($rawSale[$field])) {
+
+                $method = 'set' . str_replace(
+                    ' ',
+                    '',
+                    ucwords(str_replace('_', ' ', $field))
+                );
+
+                if (method_exists($saleDb, $method)) {
+
+                    $value = $rawSale[$field];
+
+                    if ($field === 'payment_method' && is_string($value)) {
+                        $value = PaymentMethods::from($value);
+                    }
+
+                    if ($field === 'status' && is_string($value)) {
+                        $value = SaleStatus::from($value);
+                    }
+
+                    $saleDb->$method($value);
+                }
+            }
+        }
+
+        return $saleDb;
     }
 }
