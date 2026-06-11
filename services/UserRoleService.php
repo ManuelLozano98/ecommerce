@@ -108,11 +108,11 @@ class UserRoleService
 
         $userRole = new UserRole($rawUserRole);
 
-        if (!$this->userRoleRepository->insert($userRole)) {
-            throw new InsertException("Failed to insert userRole with ID " . $userRole->getId());
+        try {
+            return $this->userRoleRepository->insert($userRole);
+        } catch (\Throwable $e) {
+            throw new InsertException("Failed to insert userRole");
         }
-
-        return $userRole;
     }
     public function update($rawUserRole)
     {
@@ -121,17 +121,18 @@ class UserRoleService
         if (!$userRoleDb) {
             throw new NotFoundException("The userRole was not found or not exists");
         }
-        $canEdit = $this->userRoleRepository->findByUserIdAndRoleId($rawUserRole["user_id"], $rawUserRole["role_id"])[0];
+        $canEdit = $this->userRoleRepository->findByUserIdAndRoleId($rawUserRole["user_id"], $rawUserRole["role_id"]);
         if ($canEdit && $userRoleDb->getId() !== $canEdit->getId()) {
             throw new DuplicateException("The user already has the role");
         }
 
         $userRole = $this->set($userRoleDb, $rawUserRole);
 
-        if (!$this->userRoleRepository->update($userRole)) {
-            throw new UpdateException("Failed to update userRole with ID " . $userRole->getId());
+        try {
+            return $this->userRoleRepository->update($userRole);
+        } catch (\Throwable $e) {
+            throw new UpdateException("Failed to update userRole");
         }
-        return $userRole;
     }
 
 

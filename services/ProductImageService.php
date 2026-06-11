@@ -118,13 +118,11 @@ class ProductImageService
         $image = $this->saveImage($rawImage["image"]);
         $rawImage["image"] = $image;
         $productImage = new ProductImage($rawImage);
-        if (!$this->repository->insert($productImage)) {
-            throw new InsertException(
-                "Failed to insert product image with ID " . $productImage->getId()
-            );
+        try {
+            return $this->repository->insert($productImage);
+        } catch (\Throwable $e) {
+            throw new InsertException("Failed to insert product image with ID " . $productImage->getId());
         }
-
-        return $productImage;
     }
 
     public function update($rawImage)
@@ -151,13 +149,11 @@ class ProductImageService
 
         $this->set($imageDb, $rawImage);
 
-        if (!$this->repository->update($imageDb)) {
-            throw new UpdateException(
-                "Failed to update product image with ID " . $imageDb->getId()
-            );
+        try {
+            return $this->repository->update($imageDb);
+        } catch (\Throwable $e) {
+            throw new UpdateException("Failed to update product image with ID " . $imageDb->getId());
         }
-
-        return $imageDb;
     }
 
     private function set($imageDb, $rawImage)

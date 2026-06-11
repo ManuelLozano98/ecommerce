@@ -171,11 +171,11 @@ class ProductService
 
         $product = new Product($rawProduct);
 
-        if (!$this->repository->insert($product)) {
-            throw new InsertException("Failed to insert product '{$product->getName()}'.");
+        try {
+            return $this->repository->insert($product);
+        } catch (\Throwable $e) {
+            throw new InsertException("Failed to insert product");
         }
-
-        return $product;
     }
     public function update($rawProduct)
     {
@@ -196,13 +196,13 @@ class ProductService
             throw new ForeignKeyException("The category was not found or not exists " . $rawProduct["category_id"]);
         }
 
-        $product = $this->set($productDb, $rawProduct);
+        $this->set($productDb, $rawProduct);
 
-        if (!$this->repository->update($product)) {
-            throw new UpdateException("Failed to update product '{$product->getName()}'.");
+        try {
+            return $this->repository->update($productDb);
+        } catch (\Throwable $e) {
+            throw new UpdateException("Failed to update password with ID " . $productDb->getId());
         }
-
-        return $product;
     }
 
     public function saveImage($image, $productId)

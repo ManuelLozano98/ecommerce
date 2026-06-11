@@ -85,13 +85,11 @@ class ProductInformationService
 
         $productInformation = new ProductInformation($rawData);
 
-        if (!$this->repository->insert($productInformation)) {
-            throw new InsertException(
-                "Failed to insert product information with ID " . $productInformation->getId()
-            );
+        try {
+            return $this->repository->insert($productInformation);
+        } catch (\Throwable $e) {
+            throw new InsertException("Failed to insert product information");
         }
-
-        return $productInformation;
     }
 
     public function update($rawData)
@@ -100,13 +98,11 @@ class ProductInformationService
 
         $this->set($infoDb, $rawData);
 
-        if (!$this->repository->update($infoDb)) {
-            throw new UpdateException(
-                "Failed to update product information with ID " . $infoDb->getId()
-            );
+        try {
+            return $this->repository->update($infoDb);
+        } catch (\Throwable $e) {
+            throw new UpdateException("Failed to update product information with ID " . $infoDb->getId());
         }
-
-        return $infoDb;
     }
 
     private function set($infoDb, $rawData)

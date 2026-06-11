@@ -46,21 +46,23 @@ class PasswordResetService
 
         $password = new PasswordReset($rawPassword);
 
-        if (!$this->repository->insert($password)) {
-            throw new InsertException("Failed to insert password with ID " . $password->getId());
+        try {
+            return $this->repository->insert($password);
+        } catch (\Throwable $e) {
+            throw new InsertException("Failed to insert password reset");
         }
-        return $password;
     }
     public function update($rawPassword)
     {
         $passwordDb = $this->getByToken($rawPassword["token"]);
 
-        $password = $this->set($passwordDb, $rawPassword);
+        $this->set($passwordDb, $rawPassword);
 
-        if (!$this->repository->update($password)) {
+        try {
+            return $this->repository->update($passwordDb);
+        } catch (\Throwable $e) {
             throw new UpdateException("Failed to update password with ID " . $passwordDb->getId());
         }
-        return $password;
     }
 
 
