@@ -27,7 +27,7 @@ class StripeService
                     'product_data' => [
                         'name' => $product["name"],
                         'description' => $product["description"],
-                        'images' => [URL_LOCAL_SITE . "uploads/images/" . $product["image"]], //LOCAL IMAGES CANNOT BE RENDERED
+                        'images' => [Env::get("APP_URL") . "uploads/images/" . $product["image"]], //LOCAL IMAGES CANNOT BE RENDERED
                         'metadata' => [
                             'product_id' => (int)$product["id"]
                         ],
@@ -46,7 +46,13 @@ class StripeService
                 'user_id' => $userId,
                 'checkout_type' => $checkoutType
             ],
-            'return_url' => URL_LOCAL_SITE . 'checkoutReturn?session_id={CHECKOUT_SESSION_ID}',
+            'payment_intent_data' => [
+                'metadata' => [
+                    'user_id' => $userId,
+                    'checkout_type' => $checkoutType
+                ]
+            ],
+            'return_url' => Env::get("APP_URL") . 'checkout-return?session_id={CHECKOUT_SESSION_ID}',
         ]);
     }
 
