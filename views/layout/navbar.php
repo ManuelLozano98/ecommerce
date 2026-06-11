@@ -33,7 +33,7 @@ $admin = $user && !empty($user['roles']) && in_array('admin', $user['roles'], tr
           <i class="fas fa-user ml-1"></i>
         </a>
         <!-- Dropdown -->
-        <div class="dropdown-menu dropdown-menu-lg dropdown-menu-end p-2" style="min-width: 250px;">
+        <div class="dropdown-menu dropdown-menu-lg dropdown-menu-end p-2" style="min-width: 200px;">
           <a class="" href="<?php echo ROOT ?>/login"><button class="btn-primary fas btn-block mb-2 font-weight-bold p-2">Log In</button></a>
           <p>New customer? <a href="<?php echo ROOT ?>/sign-up">Start here</a></p>
         </div>
