@@ -80,6 +80,9 @@ class SaleApi
     {
         $body = $request->getBody()->getContents();
         $data = json_decode($body, true);
+        if (!$data) {
+            return ApiHelper::error($response, ['message' => 'Invalid JSON input'], 400);
+        }
         $method = $request->getMethod();
         $isValid = $this->validate($data);
         if (is_object($isValid) && $isValid instanceof ErrorBag) {

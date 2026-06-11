@@ -129,7 +129,7 @@ class UserApi
     public function saveImage($request, $response, $args)
     {
         $body = $request->getUploadedFiles();
-        if (!$body) {
+        if (empty($body)) {
             return ApiHelper::error($response, ['message' => 'Invalid JSON input'], 400);
         }
 

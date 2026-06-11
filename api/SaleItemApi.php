@@ -28,8 +28,11 @@ class SaleItemApi
     {
         $body = $request->getBody()->getContents();
         $data = json_decode($body, true);
+        if (!$data) {
+            return ApiHelper::error($response, ['message' => 'Invalid JSON input'], 400);
+        }
         $method = $request->getMethod();
-        $data['sale_id'] = $args['id'];
+        $data['sale_id'] = $args['id'] ?? null;
         if (isset($args['item_id'])) {
             $data['id'] = $args['item_id'];
         }
@@ -56,7 +59,7 @@ class SaleItemApi
     public function delete($request, $response, $args)
     {
         $this->saleItemService->deleteItemById($args['item_id'], $args['id']);
-        return ApiHelper::success($response, ['message' => 'Sale deleted successfully']);
+        return ApiHelper::success($response, ['message' => 'Sale item deleted successfully']);
     }
 
     private function validate($data, $method)
