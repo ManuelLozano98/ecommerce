@@ -54,7 +54,8 @@ class ReviewService
     {
         return $this->repository->findByUserId($id);
     }
-    public function getActiveReviewsByUser($id){
+    public function getActiveReviewsByUser($id)
+    {
         return $this->repository->findActiveByUserId($id);
     }
     public function getReviewByProductIdAndUserId($productId, $userId)
@@ -152,10 +153,11 @@ class ReviewService
             throw new DuplicateException("The user has a review of the product");
         }
         $review = new Review($rawReview);
-        if (!$this->repository->insert($review)) {
-            throw new InsertException("Failed to insert review");
+        try {
+            return $this->repository->insert($review);
+        } catch (\Throwable $e) {
+            throw new InsertException("Failed to insert password reset");
         }
-        return $review;
     }
     public function update($rawReview)
     {
@@ -169,11 +171,12 @@ class ReviewService
         if (!$this->user_repository->findById($rawReview["user_id"])) {
             throw new NotFoundException("The review was not found or not exists");
         }
-        $editReview = $this->set($reviewDb, $rawReview);
-        if (!$this->repository->update($editReview)) {
-            throw new UpdateException("Failed to update review with ID " . $reviewDb->getId());
+        $this->set($reviewDb, $rawReview);
+        try {
+            return $this->repository->update($reviewDb);
+        } catch (\Throwable $e) {
+            throw new UpdateException("Failed to update password with ID " . $reviewDb->getId());
         }
-        return $editReview;
     }
 
     private function set($reviewDb, $rawReview)

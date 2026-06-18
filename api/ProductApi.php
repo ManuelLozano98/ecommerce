@@ -133,7 +133,7 @@ class ProductApi
     public function saveImage($request, $response, $args)
     {
         $body = $request->getUploadedFiles();
-        if (!$body) {
+        if (empty($body)) {
             return ApiHelper::error($response, ['message' => 'Invalid JSON input'], 400);
         }
 
@@ -173,7 +173,7 @@ class ProductApi
     private function validateImageExt($file)
     {
 
-        $fileExt = strtolower(pathinfo($file->getClientFileName(), PATHINFO_EXTENSION));
+        $fileExt = strtolower(pathinfo($file->getClientFilename(), PATHINFO_EXTENSION));
         $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
 
         return in_array($fileExt, $allowed);

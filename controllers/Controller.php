@@ -303,11 +303,6 @@ class Controller
         return $this->renderer->render($response, "checkout-form.php");
     }
 
-    public function indexCheckoutReturn($request, $response, $args)
-    {
-        return $this->renderer->render($response, "checkout-return.php");
-    }
-
     public function checkoutAddress($request, $response, $args)
     {
         $body = $request->getBody()->getContents();
@@ -331,6 +326,7 @@ class Controller
         if (!$this->shippingAddressService->getByUser($data['user_id'])) {
             $result = $this->shippingAddressService->save($data);
         } else {
+            $data['id'] = $this->shippingAddressService->getByUser($data['user_id'])->getId();
             $result = $this->shippingAddressService->update($data);
         }
         if ($result) {

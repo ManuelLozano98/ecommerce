@@ -89,10 +89,11 @@ class CategoryService
 
         $category = new Category($rawCategory);
 
-        if (!$this->repository->insert($category)) {
-            throw new InsertException("Failed to insert category with ID " . $category->getId());
+        try {
+            return $this->repository->insert($category);
+        } catch (\Throwable $e) {
+            throw new InsertException("Failed to insert category");
         }
-        return $category;
     }
     public function update($rawCategory)
     {
@@ -105,10 +106,11 @@ class CategoryService
         }
         $this->set($categoryDb, $rawCategory);
 
-        if (!$this->repository->update($categoryDb)) {
-            throw new UpdateException("Failed to update category with ID " . $categoryDb->getId());
+        try {
+            return $this->repository->update($categoryDb);
+        } catch (\Throwable $e) {
+            throw new UpdateException("Failed to update category");
         }
-        return $categoryDb;
     }
 
     private function set($productDb, $rawProduct)

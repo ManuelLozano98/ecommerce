@@ -144,7 +144,7 @@ class ProductImageApi
     private function validateImageExt($file)
     {
 
-        $fileExt = strtolower(pathinfo($file->getClientFileName(), PATHINFO_EXTENSION));
+        $fileExt = strtolower(pathinfo($file->getClientFilename(), PATHINFO_EXTENSION));
         $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
 
         return in_array($fileExt, $allowed);

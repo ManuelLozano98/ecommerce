@@ -47,10 +47,11 @@ class EmailChangeService
 
         $email_change = new EmailChange($rawEmail);
 
-        if (!$this->repository->insert($email_change)) {
-            throw new InsertException("Failed to insert email_change with ID " . $email_change->getId());
+        try {
+            return $this->repository->insert($email_change);
+        } catch (\Throwable $e) {
+            throw new InsertException("Failed to insert email_change");
         }
-        return $email_change;
     }
     public function update($rawEmail)
     {
@@ -58,10 +59,11 @@ class EmailChangeService
 
         $email_change = $this->set($email_changeDb, $rawEmail);
 
-        if (!$this->repository->update($email_change)) {
-            throw new UpdateException("Failed to update email_change with ID " . $email_changeDb->getId());
+        try {
+            return $this->repository->update($email_change);
+        } catch (\Throwable $e) {
+            throw new UpdateException("Failed to update email_change with ID " . $email_change->getId());
         }
-        return $email_change;
     }
 
 

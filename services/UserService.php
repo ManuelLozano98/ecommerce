@@ -149,10 +149,10 @@ class UserService
         $user->setPassword($hash);
         $user = $this->generateToken($user);
 
-        if (!$this->repository->insert($user)) {
-            throw new InsertException("Failed to insert user with ID " . $user->getId());
-        } else {
-            return $user;
+        try {
+            return $this->repository->insert($user);
+        } catch (\Throwable $e) {
+            throw new InsertException("Failed to insert user");
         }
     }
     public function update($rawUser)
@@ -171,10 +171,11 @@ class UserService
         }
         $user = $this->set($userDb, $rawUser);
 
-        if (!$this->repository->update($user)) {
-            throw new UpdateException("Failed to update user with ID " . $userDb->getId());
+        try {
+            return $this->repository->update($user);
+        } catch (\Throwable $e) {
+            throw new UpdateException("Failed to update user");
         }
-        return $user;
     }
 
     public function updateEmail(User $user, string $email)
@@ -182,20 +183,22 @@ class UserService
         if (!$user || !$this->repository->findById($user->getId())) {
             throw new NotFoundException("The user was not found or not exists");
         }
-
-        if (!$this->repository->updateEmail($user, $email)) {
-            throw new UpdateException("Failed to update user with ID " . $user->getId());
+        try {
+            return $this->repository->updateEmail($user, $email);
+        } catch (\Throwable $e) {
+            throw new UpdateException("Failed to update user");
         }
-        return $user;
     }
 
     public function updatePassword(int $userId, string $password)
     {
         $passwordHash = password_hash($password, PASSWORD_ARGON2ID);
-        if (!$this->repository->updatePassword($userId, $passwordHash)) {
-            throw new UpdateException("Failed to update user with ID " . $userId);
-        };
-        return true;
+        try {
+            $this->repository->updatePassword($userId, $passwordHash);
+            return true;
+        } catch (\Throwable $e) {
+            throw new UpdateException("Failed to update user");
+        }
     }
 
     public function updateProfile(User $user, array $data)
@@ -212,11 +215,11 @@ class UserService
         if (!isset($data['address']) || $data['address'] === '') {
             $data['address'] = $user->getAddress();
         }
-
-        if (!$this->repository->updateProfile($user, $data)) {
-            throw new UpdateException("Failed to update user with ID " . $user->getId());
+        try {
+            return $this->repository->updateProfile($user, $data);
+        } catch (\Throwable $e) {
+            throw new UpdateException("Failed to update user");
         }
-        return $user;
     }
 
     public function updateToken(User $user)
@@ -227,22 +230,22 @@ class UserService
         $token = bin2hex(random_bytes(32));
         $expiresAt = date('Y-m-d H:i:s', strtotime('+1 day'));
 
-        if (!$this->repository->updateToken($user, $token, $expiresAt)) {
-            throw new UpdateException("Failed to update user with ID " . $user->getId());
+        try {
+            return $this->repository->updateToken($user, $token, $expiresAt);
+        } catch (\Throwable $e) {
+            throw new UpdateException("Failed to update user");
         }
-        return $user;
     }
 
 
     private function set($user, $data)
     {
         $allowedFields = ['name', 'email', 'username', 'phone', 'address', 'document', 'document_type', 'token', 'token_expired_at', 'registration_date', 'active'];
-        if ($data["email"] === "") {
+        if (isset($data['email']) && $data["email"] === "") {
             $allowedFields = array_diff($allowedFields, ["email"]);
         }
-        if ($data["password"] !== "") {
-            $hash = password_hash($user->getPassword(), PASSWORD_ARGON2ID);
-            $user->setPassword($hash);
+        if (!empty($data["password"])) {
+            $user->setPassword(password_hash($data['password'], PASSWORD_ARGON2ID));
         }
 
         foreach ($allowedFields as $field) {

@@ -68,11 +68,11 @@ class Sale implements JsonSerializable
     }
     public function getPaymentMethod()
     {
-        return str_replace("_", " ", ucwords($this->payment_method->value, "_"));
+        return $this->payment_method;
     }
     public function getStatus()
     {
-        return str_replace("_", " ", ucwords($this->status->value, "_"));
+        return $this->status;
     }
     public function getCreatedAt()
     {
@@ -97,11 +97,25 @@ class Sale implements JsonSerializable
     }
     public function setPaymentMethod($method)
     {
-        $this->payment_method = PaymentMethods::tryFrom(strtolower($method)) ?? PaymentMethods::CREDIT_CARD;
+        if ($method instanceof PaymentMethods) {
+            $this->payment_method = $method;
+            return;
+        }
+
+        $this->payment_method = PaymentMethods::tryFrom(
+            str_replace(' ', '_', strtolower($method))
+        ) ?? PaymentMethods::CREDIT_CARD;
     }
     public function setStatus($status)
     {
-        $this->status = SaleStatus::tryFrom(strtolower($status)) ?? SaleStatus::PENDING;
+        if ($status instanceof SaleStatus) {
+            $this->status = $status;
+            return;
+        }
+
+        $this->status = SaleStatus::tryFrom(
+            str_replace(' ', '_', strtolower($status))
+        ) ?? SaleStatus::PENDING;
     }
     public function setCreatedAt($datetime)
     {

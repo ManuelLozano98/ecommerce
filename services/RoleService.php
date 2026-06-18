@@ -54,11 +54,11 @@ class RoleService
 
         $role = new Role($rawRole);
 
-        if (!$this->repository->insert($role)) {
-            throw new InsertException("Failed to insert role with ID " . $role->getId());
+        try {
+            return $this->repository->insert($role);
+        } catch (\Throwable $e) {
+            throw new InsertException("Failed to insert role");
         }
-
-        return $role;
     }
     public function update($rawRole)
     {
@@ -75,10 +75,11 @@ class RoleService
 
         $role = $this->set($roleDb, $rawRole);
 
-        if (!$this->repository->update($role)) {
+        try {
+            return $this->repository->update($role);
+        } catch (\Throwable $e) {
             throw new UpdateException("Failed to update role with ID " . $role->getId());
         }
-        return $role;
     }
 
 

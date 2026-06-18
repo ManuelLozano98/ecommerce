@@ -36,7 +36,7 @@ return function (App $app) {
     $app->get('/logout/', UserController::class . ':logout')->add(AuthMiddleware::class);
     $app->get('/admin/', UserController::class . ':indexAdmin')->add(AdminMiddleware::class)->add(CartMiddleware::class);
     $app->get('/checkout/', Controller::class . ':indexCheckout');
-    $app->get('/checkoutReturn/', Controller::class . ':indexCheckoutReturn');
+    $app->get('/checkout-return/', StripeController::class . ':indexCheckoutReturn');
     $app->get('/checkout/address/', Controller::class . ':indexCheckoutAddress')->add(CartMiddleware::class);
     $app->get('/sign-up/', UserController::class . ':indexSignUp');
     $app->get('/forgot-password/', UserController::class . ':indexForgotPassword');

@@ -5,6 +5,7 @@ namespace App\Services;
 
 use App\Models\Mail;
 use Exception;
+use App\Config\Env;
 
 
 class MailService
@@ -74,7 +75,7 @@ HTML;
     public function createWelcomeEmail($email, $username, $token)
     {
 
-        $verifyUrl = URL_LOCAL_SITE . "email/$token";
+        $verifyUrl = Env::get("APP_URL") . "email/$token";
         try {
             $mail = Mail::createMailer();
             $mail->addAddress($email, $username);
@@ -100,7 +101,7 @@ HTML;
     public function changeEmail($email, $username, $token)
     {
 
-        $url = URL_LOCAL_SITE . "email/confirm/$token";
+        $url = Env::get("APP_URL") . "email/confirm/$token";
         try {
             $mail = Mail::createMailer();
             $mail->addAddress($email, $username);
@@ -137,7 +138,7 @@ HTML;
 
     public function passwordResetEmail($email, $username, $token)
     {
-        $resetUrl = URL_LOCAL_SITE . "recover-password/$token";
+        $resetUrl = Env::get("APP_URL") . "recover-password/$token";
         try {
             $mail = Mail::createMailer();
             $mail->addAddress($email, $username);

@@ -115,10 +115,11 @@ class CartService
             throw new NotFoundException("The user was not found or not exists");
         }
 
-        if (!$this->repository->insert($cart)) {
+        try {
+            return $this->repository->insert($cart);
+        } catch (\Throwable $e) {
             throw new InsertException("Failed to insert cart with ID " . $cart->getId());
         }
-        return $cart;
     }
     public function update($cart)
     {
@@ -126,10 +127,11 @@ class CartService
 
         $this->set($cartDb, $cart);
 
-        if (!$updated = $this->repository->update($cartDb)) {
+        try {
+            return $this->repository->update($cartDb);
+        } catch (\Throwable $e) {
             throw new UpdateException("Failed to update cart with ID " . $cartDb->getId());
         }
-        return $updated;
     }
 
     private function set($cartDb, $cart)

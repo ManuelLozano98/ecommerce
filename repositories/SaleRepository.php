@@ -110,8 +110,8 @@ class SaleRepository implements SaleRepositoryInterface
             "idssss",
             $sale->getUserId(),
             $sale->getTotalAmount(),
-            $sale->getPaymentMethod(),
-            $sale->getStatus(),
+            $sale->getPaymentMethod()->value,
+            $sale->getStatus()->value,
             $sale->getCreatedAt(),
             $sale->getUpdatedAt()
         );
@@ -127,8 +127,8 @@ class SaleRepository implements SaleRepositoryInterface
             "idssssi",
             $sale->getUserId(),
             $sale->getTotalAmount(),
-            $sale->getPaymentMethod(),
-            $sale->getStatus(),
+            $sale->getPaymentMethod()->value,
+            $sale->getStatus()->value,
             $sale->getCreatedAt(),
             $sale->getUpdatedAt(),
             $sale->getId()
