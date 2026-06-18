@@ -326,6 +326,7 @@ class Controller
         if (!$this->shippingAddressService->getByUser($data['user_id'])) {
             $result = $this->shippingAddressService->save($data);
         } else {
+            $data['id'] = $this->shippingAddressService->getByUser($data['user_id'])->getId();
             $result = $this->shippingAddressService->update($data);
         }
         if ($result) {
