@@ -27,8 +27,7 @@
   },
   "scripts": {
     "post-install-cmd": [
-      "cp -r vendor/almasaeed2010/adminlte/dist public/adminlte/dist",
-      "cp -r vendor/almasaeed2010/adminlte/plugins public/adminlte/plugins"
+      "php scripts/adminlte-copy.php"
     ]
   }
 }
