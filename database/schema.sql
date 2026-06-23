@@ -550,6 +550,53 @@ INSERT INTO `users_roles` (`id`, `user_id`, `role_id`) VALUES
 (2, 1, 1);
 
 --
+-- Estructura de tabla para la tabla `shipments`
+--
+
+CREATE TABLE `shipments` (
+  `id` int(11) NOT NULL,
+  `sale_id` int(11) NOT NULL,
+  `shippo_shipment_id` varchar(100) NOT NULL,
+  `shippo_transaction_id` varchar(100) NOT NULL,
+  `stripe_session_id` varchar(200) NOT NULL,
+  `tracking_number` varchar(100) NOT NULL,
+  `carrier` varchar(100) NOT NULL,
+  `status` varchar(100) NOT NULL,
+  `label_url` text NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NULL DEFAULT NULL ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Indices de la tabla `shipments`
+--
+ALTER TABLE `shipments`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `fk_shipment_sale_id` (`sale_id`);
+
+
+--
+-- AUTO_INCREMENT de las tablas volcadas
+--
+
+--
+-- AUTO_INCREMENT de la tabla `shipments`
+--
+ALTER TABLE `shipments`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- Restricciones para tablas volcadas
+--
+
+--
+-- Filtros para la tabla `shipments`
+--
+ALTER TABLE `shipments`
+  ADD CONSTRAINT `fk_shipment_sale_id` FOREIGN KEY (`sale_id`) REFERENCES `sales` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+COMMIT;
+
+--
 -- Índices para tablas volcadas
 --
 
