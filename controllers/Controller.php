@@ -12,6 +12,10 @@ use App\Services\ProductImageService;
 use App\Services\ProductInformationService;
 use App\Services\ShippingAddressService;
 use App\Services\UserService;
+use App\Services\ShipmentService;
+use App\Services\ShippoService;
+use App\Config\Env;
+use Shippo_Track;
 
 class Controller
 {
@@ -23,6 +27,8 @@ class Controller
     private UserService $userService;
     private ProductInformationService $productInformationService;
     private ShippingAddressService $shippingAddressService;
+    private ShipmentService $shipmentService;
+    private ShippoService $shippoService;
 
 
     public function __construct(
@@ -33,7 +39,9 @@ class Controller
         UserService $userService,
         ProductImageService $productImageService,
         ProductInformationService $productInformationService,
-        ShippingAddressService $shippingAddressService
+        ShippingAddressService $shippingAddressService,
+        ShipmentService $shipmentService,
+        ShippoService $shippoService
     ) {
         $this->renderer = $renderer;
         $this->categoryService = $categoryService;
@@ -43,6 +51,8 @@ class Controller
         $this->productImageService = $productImageService;
         $this->productInformationService = $productInformationService;
         $this->shippingAddressService = $shippingAddressService;
+        $this->shipmentService = $shipmentService;
+        $this->shippoService = $shippoService;
     }
     public function index($request, $response, $args)
     {
@@ -411,5 +421,44 @@ class Controller
         $data = $this->shippingAddressService->getByUser($userId);
         $userData = $this->userService->getUser($userId);
         return $this->renderer->render($response, "checkout-address.php", ['address' => $data, 'userData' => $userData, 'products' => $products]);
+    }
+
+    public function trackOrder($request, $response, $args)
+    {
+        $shipment = $this->shipmentService->getByTrackingNumber($args['id']);
+        if (Env::get("APP_ENV") === "local") {
+
+            // In test environment, Shippo does not generate real tracking updates.
+            // We use a predefined test tracking number to simulate shipment states
+            $status_params = array(
+                'carrier' => 'shippo',
+                'tracking_number' => 'SHIPPO_TRANSIT'
+            );
+        } else {
+            $status_params = array(
+                'carrier' => strtolower($shipment->getCarrier()),
+                'tracking_number' => $shipment->getTrackingNumber()
+            );
+        }
+
+        $status = Shippo_Track::create($status_params, $this->shippoService->get());
+        if (!$status || !isset($status->tracking_status)) {
+            $data = [
+                'message' => 'Unable to retrieve tracking information.'
+            ];
+        } else {
+            $data = [
+                'tracking_number' => $status->tracking_number,
+                'carrier' => $status->carrier,
+                'status' => $status->tracking_status->status,
+                'status_details' => $status->tracking_status->status_details,
+                'eta' => $status->eta
+            ];
+        }
+
+        $response->getBody()->write(json_encode($data));
+
+        return $response
+            ->withHeader('Content-Type', 'application/json');
     }
 }

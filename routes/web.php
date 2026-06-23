@@ -56,6 +56,7 @@ return function (App $app) {
     $app->get('/{category:[a-z0-9-]+}/{slug:[a-z0-9-]+}/', Controller::class . ':viewProduct')->add(CartMiddleware::class);
     $app->get('/{category:[a-z0-9-]+}/',  Controller::class . ':viewCategoryProducts')->add(CartMiddleware::class);
     $app->get('/email/confirm/{token}/', UserController::class . ':confirmEmail');
+    $app->get('/my-orders/track/{id}/', Controller::class . ':trackOrder');
 
     $app->post('/checkout/start/', Controller::class . ':checkoutStart');
     $app->post('/checkout/address/', Controller::class . ':checkoutAddress');
