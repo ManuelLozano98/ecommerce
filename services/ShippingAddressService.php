@@ -96,6 +96,39 @@ class ShippingAddressService
         }
     }
 
+    public function getCountryFromAddressOSM($address, $city = '', $state = '')
+    {
+        $query = urlencode("$address, $city, $state");
+
+
+        // Open Street Map
+        //Set addressdetails=1 to get country
+        $url = "https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&q={$query}";
+
+        $ch = curl_init();
+
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'User-Agent: Ecommerce/1.0'
+        ]);
+
+        $response = curl_exec($ch);
+
+        if (curl_errno($ch)) {
+            return null;
+        }
+
+        $data = json_decode($response, true);
+
+
+        if (!empty($data[0]['address']['country'])) {
+            return $data[0]['address']['country'];
+        }
+
+        return null;
+    }
+
 
     private function set($address, $data)
     {

@@ -27,6 +27,7 @@ use App\Repositories\Contracts\ProductInformationRepositoryInterface;
 use App\Repositories\Contracts\ReviewRepositoryInterface;
 use App\Repositories\Contracts\SaleItemRepositoryInterface;
 use App\Repositories\Contracts\SaleRepositoryInterface;
+use App\Repositories\Contracts\ShipmentRepositoryInterface;
 use App\Repositories\Contracts\ShippingAddressRepositoryInterface;
 use App\Repositories\EmailChangeRepository;
 use App\Repositories\PasswordResetRepository;
@@ -35,6 +36,7 @@ use App\Repositories\ProductInformationRepository;
 use App\Repositories\ReviewRepository;
 use App\Repositories\SaleItemRepository;
 use App\Repositories\SaleRepository;
+use App\Repositories\ShipmentRepository;
 use App\Repositories\ShippingAddressRepository;
 use App\Services\CategoryService;
 use App\Services\EmailChangeService;
@@ -46,7 +48,9 @@ use App\Services\ProductService;
 use App\Services\ReviewService;
 use App\Services\SaleItemService;
 use App\Services\SaleService;
+use App\Services\ShipmentService;
 use App\Services\ShippingAddressService;
+use App\Services\ShippoService;
 use Rakit\Validation\Validator;
 
 $container = new Container();
@@ -88,4 +92,9 @@ $container->set(PasswordRepositoryInterface::class, Di\autowire(PasswordResetRep
 $container->set(PasswordResetService::class, Di\autowire());
 $container->set(EmailChangeRepositoryInterface::class, Di\autowire(EmailChangeRepository::class));
 $container->set(EmailChangeService::class, Di\autowire());
+$container->set(ShippoService::class, function () {
+    return new ShippoService(Env::get("SHIPPO_SECRET"));
+});
+$container->set(ShipmentRepositoryInterface::class, Di\autowire(ShipmentRepository::class));
+$container->set(ShipmentService::class, Di\autowire());
 return $container;

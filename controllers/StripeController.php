@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use App\Models\ShippingAddress;
 use App\Services\StripeService;
 use Slim\Views\PhpRenderer;
 use Stripe\StripeClient;
@@ -11,6 +12,14 @@ use App\Services\SaleService;
 use App\Services\SaleItemService;
 use App\Services\CartService;
 use App\Services\MailService;
+use App\Services\ShippingAddressService;
+use App\Services\ProductInformationService;
+use App\Services\ShipmentService;
+use App\Services\ShippoService;
+use Shippo_Shipment;
+use Shippo_Transaction;
+use Shippo_CustomsDeclaration;
+use App\Utils\CountryCodeHelper;
 
 class StripeController
 {
@@ -22,8 +31,12 @@ class StripeController
     private ProductService $productService;
     private MailService $mailService;
     private PhpRenderer $renderer;
+    private ShippingAddressService $shippingAddressService;
+    private ProductInformationService $productInformationService;
+    private ShipmentService $shipmentService;
+    private ShippoService $shippoService;
 
-    public function __construct(StripeService $stripeService, StripeClient $stripeClient, ProductService $productService, SaleService $saleService, SaleItemService $saleItemService, CartService $cartService, MailService $mailService, PhpRenderer $renderer)
+    public function __construct(StripeService $stripeService, StripeClient $stripeClient, ProductService $productService, SaleService $saleService, SaleItemService $saleItemService, CartService $cartService, MailService $mailService, PhpRenderer $renderer, ShippingAddressService $shippingAddressService, ProductInformationService $productInformationService, ShipmentService $shipmentService, ShippoService $shippoService)
     {
         $this->stripeService = $stripeService;
         $this->stripeClient = $stripeClient;
@@ -34,6 +47,10 @@ class StripeController
         $this->productService = $productService;
         $this->mailService = $mailService;
         $this->renderer = $renderer;
+        $this->shippingAddressService = $shippingAddressService;
+        $this->productInformationService = $productInformationService;
+        $this->shipmentService = $shipmentService;
+        $this->shippoService = $shippoService;
     }
     public function checkout($request, $response, $args)
     {
@@ -132,6 +149,7 @@ class StripeController
                     'created_at' =>  date('Y-m-d H:i:s', $session->created),
                 ];
                 $products = [];
+                $productsDetails = [];
                 $sale = $this->saleService->save($saleData);
                 $items = $this->stripeClient->checkout->sessions->allLineItems($session->id, ['expand' => ['data.price.product']]);
                 foreach ($items->data as $item) {
@@ -157,6 +175,14 @@ class StripeController
                         'price' => $item->price->unit_amount / 100,
                         'quantity' => $item->quantity
                     ];
+
+                    //RETRIEVE PRODUCT DEATILS
+                    try {
+                        $detail = $this->productInformationService->getById((int)$item->price->product->metadata->product_id);
+                        array_push($productsDetails, $detail);
+                    } catch (Exception $e) {
+                        continue;
+                    }
                 }
 
 
@@ -166,6 +192,29 @@ class StripeController
                     $this->cartService->deleteUserCart($session->metadata->user_id);
                 }
                 unset($_SESSION["checkout"]);
+
+
+                // UPDATE COUNTRY
+                $address = $this->shippingAddressService->getByUser($session->metadata->user_id);
+                $country = $this->shippingAddressService->getCountryFromAddressOSM($address->getAddress(), $address->getCity(), $address->getProvince());
+                $address->setCountry($country);
+                $this->shipmentService->update($address->toArray());
+
+                // CREATE A SHIPPING PROCESS
+                [$transaction, $shipm, $rate]  = $this->createShippingProcess($address, $productsDetails, $session->customer_details->email, $items);
+                $shipment = [
+                    'sale_id' => $sale->getId(),
+                    'shippo_shipment_id' => $shipm->object_id ?? null,
+                    'shippo_transaction_id' => $transaction->object_id ?? null,
+                    'stripe_session_id' => $session->id ?? null,
+                    'tracking_number' => $transaction->tracking_number ?? null,
+                    'status' => $transaction->status ?? null,
+                    'label_url' => $transaction->label_url ?? null,
+                    'carrier' => $rate->provider,
+
+                ];
+                $this->shipmentService->save($shipment);
+
 
                 // SEND EMAIL
                 $email = $session->customer_details->email;
@@ -254,6 +303,142 @@ class StripeController
         return $response->withStatus(200);
     }
 
+    public function createShippingProcess(ShippingAddress $address, array $details, string $email, \Stripe\Collection $items)
+    {
+        $parcels = [];
+
+        // Example from_address array
+        $from_address = array(
+            'name' => 'Mr Hippo',
+            'company' => 'Shippo',
+            'street1' => '215 Clayton St.',
+            'city' => 'San Francisco',
+            'state' => 'CA',
+            'zip' => '94117',
+            'country' => 'US',
+            'phone' => '+1 555 341 9393',
+            'email' => 'mr-hippo@goshipppo.com',
+        );
+        $country = strtoupper(CountryCodeHelper::getCountryCode($address->getCountry()));
+        $to_address = array(
+            'name' => $address->getFullName(),
+            'street1' => $address->getAddress(),
+            'city' => $address->getCity(),
+            'state' => $address->getProvince(),
+            'zip' => $address->getPostalCode(),
+            'country' => $country = $country ?: 'ES',
+            'phone' => $address->getPhone(),
+            'email' => $email,
+        );
+
+        // Example parcel array
+        $parcel = array(
+            'length' => 5,
+            'width' => 5,
+            'height' => 5,
+            'distance_unit' => 'cm',
+            'weight' => 100,
+            'mass_unit' => 'g',
+        );
+
+        foreach ($details as $detail) {
+            $weight = $detail->getWeight();
+
+            // Extract the numeric weight value and unit (kg or g) from the input string
+            preg_match('/^(\d+(?:\.\d+)?)(kg|g)$/i', $weight, $matches);
+
+            $value = (float) $matches[1];
+            $unit = strtolower($matches[2]);
+
+            $grams = $unit === 'kg'
+                ? $value * 1000
+                : $value;
+
+            /* Parse dimensions in the format "length x width x height"
+             and capture each numeric value separately. */
+            preg_match(
+                '/([\d.]+)\s*x\s*([\d.]+)\s*x\s*([\d.]+)/i',
+                $detail->getDimensions(),
+                $matches
+            );
+            $parcels[] = [
+                'length' => (float) $matches[1] == 0 ? $parcel['length'] : $matches[1],
+                'width' => (float) $matches[2] == 0 ? $parcel['width'] : $matches[2],
+                'height' => (float) $matches[3] == 0 ? $parcel['height'] : $matches[3],
+                'distance_unit' => 'cm',
+                'weight' => (float) $detail->getWeight() == 0 ? $parcel['weight'] : $grams,
+                'mass_unit' => $unit,
+            ];
+        };
+
+
+        if ($from_address['country'] !== $to_address['country']) {
+            //INTERNATIONAL SHIPMENTS
+
+            $data = [];
+            foreach ($items->data as $index => $item) {
+                $detail = $details[$index] ?? null;
+
+                $data[] = [
+                    'description' => $item->description ?? 'Product',
+
+                    'quantity' => $item->quantity ?? 1,
+
+                    'net_weight' => $parcels[$index]['weight'] ?? $parcel['weight'],
+                    'mass_unit' => $parcels[$index]['mass_unit'],
+
+                    'value_amount' => $item->amount_total
+                        ? $item->amount_total / 100
+                        : 0,
+
+                    'value_currency' => $item->currency ?? 'EUR',
+
+                    'origin_country' => $from_address['country'],
+                ];
+            }
+
+            $customsDeclaration = Shippo_CustomsDeclaration::create([
+                'certify' => true,
+                'certify_signer' => 'John Doe',
+                'contents_type' => 'MERCHANDISE',
+                'non_delivery_option' => 'RETURN',
+                'eel_pfc' => 'NOEEI_30_37_a',
+                'items' => $data,
+            ]);
+
+            $shipment = Shippo_Shipment::create([
+                'address_from' => $from_address,
+                'address_to' => $to_address,
+                'parcels' => $parcels,
+
+                'customs_declaration' => $customsDeclaration->object_id
+            ]);
+        } else {
+            $shipment = Shippo_Shipment::create(
+                array(
+                    'address_from' => $from_address,
+                    'address_to' => $to_address,
+                    'parcels' => count($parcels) <= 0 ? $parcel : $parcels,
+                    'mass_unit' => 'kg'
+                ),
+                $this->shippoService->get()
+            );
+        }
+
+
+        $rate = $shipment->rates[0];
+
+        $transaction = Shippo_Transaction::create(
+            array(
+                'rate' => $rate->object_id,
+                'async' => false,
+            ),
+            $this->shippoService->get()
+        );
+
+        return [$transaction, $shipment, $rate];
+    }
+
     public function indexCheckoutReturn($request, $response, $args)
     {
         $params = $request->getQueryParams();
@@ -262,10 +447,13 @@ class StripeController
         if (!$sessionId) {
             return $response->withHeader('Location', ROOT)->withStatus(302);
         }
+        $shipment = $this->shipmentService->getByStripeId($sessionId);
+        $tracking_number = $shipment->getTrackingNumber();
+
         try {
             $session = $this->stripeClient->checkout->sessions->retrieve($sessionId);
             $customer_email = $session->customer_details->email;
-            return $this->renderer->render($response, "checkout-return.php", ['session' => $session, 'customer_email' => $customer_email]);
+            return $this->renderer->render($response, "checkout-return.php", ['session' => $session, 'customer_email' => $customer_email, 'tracking_number' => $tracking_number]);
         } catch (\Stripe\Exception\InvalidRequestException) {
             return $response->withHeader('Location', ROOT)->withStatus(302);
         }
